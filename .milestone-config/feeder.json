@@ -1,0 +1,4 @@
+{
+  "sourceGlobs": ["skills/**", "agents/**", "hooks/**"],
+  "versioning": "semver"
+}
