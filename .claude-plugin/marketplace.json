@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "milestone-coherence-reviewer",
+  "owner": {
+    "name": "Ken Mulford",
+    "email": "ken@kenmulford.com"
+  },
+  "metadata": {
+    "description": "Post-build coherence reviewer for Claude Code — checks a change fits how the app is already built, heals small drift, files the rest, and never blocks the merge."
+  },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "plugins": [
+    {
+      "name": "milestone-coherence-reviewer",
+      "source": "./",
+      "description": "After a change is built, check it fits how the rest of the app is already built — helpers, conventions, stack idioms — then heal small drift inline and file bigger drift as issues or a follow-up milestone, never blocking the merge.",
+      "category": "development",
+      "tags": ["github", "milestones", "code-review", "coherence", "automation"]
+    }
+  ]
+}
