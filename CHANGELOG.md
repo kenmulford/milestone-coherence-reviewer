@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Pre-release; built on `develop` via the `feeder → driver` dogfood loop — not yet released to the protected branch.)
+Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
 ## v0.1.0 — the standalone coherence reviewer
 
@@ -29,8 +29,9 @@ Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (P
 
 Judgment-call PRs for this release: **#9** — the resolve-once layer's `/code-review` ran one fix cycle past the documented 2-cycle cap to land a single, fully-specified CR-strip; the findings were converging (5 → 3 → 1, each narrower) on a sound plan, so the extra cycle was taken (rather than parking a foundational issue over a one-liner) and labeled for audit.
 
-Tracked as companion changes in their own repos (not this release):
+Tracked as companion changes in their own repos (still deferred):
 
-- **Driver-embedded path** — a new `solve-issue` step (~6.2, after `/code-review`) + a default-filled `coherenceReviewAgent` profile key + heal-orchestration, in `milestone-driver`.
-- **The automated `feeder → driver` handoff** (the feeder creating a milestone and the driver then running it, no human in between) — a new capability in the feeder/driver. Standalone v0.1.0 can create the follow-up milestone via the feeder but cannot auto-run the driver.
-- **Suite-catalog entry** in `kenmulford/milestone-suite`'s `marketplace.json` (HTTPS `url` source), so the plugin is installable from the suite catalog as well as its own marketplace.
+- **Driver-embedded path** — a new `solve-issue` step (~6.2, after `/code-review`) + a default-filled `coherenceReviewAgent` profile key + heal-orchestration, in `milestone-driver`. → [kenmulford/milestone-driver#231](https://github.com/kenmulford/milestone-driver/issues/231)
+- **The automated `feeder → driver` handoff** (the feeder creating a milestone and the driver then running it, no human in between) — a new capability in the feeder/driver. Standalone v0.1.0 can create the follow-up milestone via the feeder but cannot auto-run the driver. → [kenmulford/milestone-driver#232](https://github.com/kenmulford/milestone-driver/issues/232)
+
+Done after the v0.1.0 release: the plugin is now listed in the [`kenmulford/milestone-suite`](https://github.com/kenmulford/milestone-suite) catalog (HTTPS `url` source) — installable from the suite as well as its own marketplace.
