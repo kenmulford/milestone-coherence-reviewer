@@ -70,7 +70,7 @@ the slices below are built from:
 | `description` | per finding | one plain-English line: what diverges and from what |
 
 The `FINDINGS: none` sentinel (the literal inline scalar) is the engine's
-clean-fit outcome and is handled as the [zero-findings terminal](#zero-findings-a-clean-terminal)
+clean-fit outcome and is handled as the [zero-findings terminal](#zero-findings--a-clean-terminal)
 below.
 
 ## Step 3 — Distribute minimal, self-contained slices
