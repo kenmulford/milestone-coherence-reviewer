@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Pre-release; built on `develop` via the `feeder → driver` dogfood loop — not yet released to the protected branch.)
+Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
 ## v0.1.0 — the standalone coherence reviewer
 
