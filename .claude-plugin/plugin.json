@@ -1,0 +1,24 @@
+{
+  "name": "milestone-coherence-reviewer",
+  "version": "0.1.0",
+  "description": "After a change is built, checks whether it fits how the rest of the app is already built — existing helpers and patterns, your conventions, the stack's idioms — then fixes small drift inline and files bigger drift as issues or a follow-up milestone, never blocking the merge. Distinct from code review (correctness) and triage (design). Stack-agnostic via the suite's shared profile.",
+  "author": {
+    "name": "Ken Mulford",
+    "email": "ken@kenmulford.com"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/kenmulford/milestone-coherence-reviewer",
+  "homepage": "https://github.com/kenmulford/milestone-coherence-reviewer#readme",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "github",
+    "milestone",
+    "code-review",
+    "coherence",
+    "automation"
+  ],
+  "dependencies": [
+    { "name": "superpowers", "marketplace": "claude-plugins-official" }
+  ]
+}
