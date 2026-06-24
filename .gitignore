@@ -1,0 +1,4 @@
+# milestone-suite per-run scratch — reviewed then deployed, never committed.
+.milestone-bootstrapper/
+.milestone-feeder/
+.milestone-driver-*/
