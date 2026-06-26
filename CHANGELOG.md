@@ -2,6 +2,16 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
+## v0.1.1 — Claude Desktop slash-command fix
+
+**Theme:** drop the cross-marketplace `superpowers` dependency so the plugin's slash commands register in Claude Desktop (they already worked in the Claude Code CLI). Mirrors [kenmulford/milestone-driver#246](https://github.com/kenmulford/milestone-driver/issues/246).
+
+### 🐛 Fix
+
+| Issue | PR | What |
+|---|---|---|
+| #24 Drop cross-marketplace superpowers dependency | #25 | Removed the `dependencies: [{ superpowers@claude-plugins-official }]` declaration from `.claude-plugin/plugin.json`. Claude Desktop loaded the plugin but skipped registering its skills (Unknown command) while that cross-marketplace dependency was declared. `superpowers` is now a documented prerequisite — install it alongside this plugin — not an auto-installed dependency. |
+
 ## v0.1.0 — the standalone coherence reviewer
 
 **Theme:** the standalone coherence review — check a built change for fit with the app, heal what's safe, and explain it legibly. Specified in [BRIEF.md](BRIEF.md); built via the `feeder → driver` dogfood loop.
