@@ -10,6 +10,15 @@ In the suite, it runs on its own during a `milestone-driver` build — you don't
 /milestone-coherence-reviewer:review <branch-or-PR>
 ```
 
+## Requires
+
+`superpowers` (from `claude-plugins-official`) — the milestone-suite's shared prerequisite. It's no longer installed automatically, so add it yourself; the `milestone-driver` and `milestone-feeder` tools that drive and feed this reviewer need it to run the suite.
+
+```
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install superpowers@claude-plugins-official
+```
+
 ## Status
 
 v0.1.0 — built and released. Spec in [BRIEF.md](BRIEF.md); built by `milestone-feeder` + `milestone-driver`. Part of the [dev-tools](../dev-tools) suite.

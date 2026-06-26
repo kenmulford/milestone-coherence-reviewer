@@ -27,7 +27,7 @@ Background jobs, queues, streams, schedulers — or "none."
 
 ## External services & integrations
 Third-party services the app depends on: auth / identity, payments, email / SMS, object storage, analytics, other APIs.
-> **GitHub** via the `gh` CLI (issue/PR comments, follow-up issue creation, the redo one-liner). **Sibling plugins:** `milestone-driver` (orchestrates the embedded path, supplies `domainSkills` and the `read-doc-section` primitive), `milestone-feeder` (the large-drift handoff target), `milestone-bootstrapper` (populated `.project/` + `domainSkills`), and `superpowers` (declared dependency). (BRIEF.md §"Integration" l.85-96; docs/write-up.md §"Four landing places"; .claude-plugin/plugin.json.)
+> **GitHub** via the `gh` CLI (issue/PR comments, follow-up issue creation, the redo one-liner). **Sibling plugins:** `milestone-driver` (orchestrates the embedded path, supplies `domainSkills` and the `read-doc-section` primitive), `milestone-feeder` (the large-drift handoff target), `milestone-bootstrapper` (populated `.project/` + `domainSkills`), and `superpowers` (a documented prerequisite, installed separately — not a declared dependency). (BRIEF.md §"Integration" l.85-96; docs/write-up.md §"Four landing places".)
 
 ## Runtime & hosting
 Where it runs and the runtime/version targets (hosting platform, language-runtime versions, regions). For mandated frameworks and packages, cross-reference `library-manifest.md`.

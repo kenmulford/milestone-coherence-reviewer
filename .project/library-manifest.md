@@ -9,7 +9,7 @@ headings stable — they are citation anchors.
 
 ## Runtime & frameworks
 The platform/runtime and primary frameworks, with versions. (Mirror these into milestone-driver `nonNegotiables` where they're hard constraints.)
-> A **Claude Code plugin** — markdown skills (`skills/review/SKILL.md`) + a markdown agent (`agents/coherence-reviewer.md`) + cross-platform script twins (bash `*.sh` / PowerShell 7+ `*.ps1`). No application runtime, no compiled language, no framework. JSON tooling is `jq` (bash) / built-in `ConvertFrom-Json` (pwsh). Depends on the `superpowers` plugin (claude-plugins-official) and, at runtime, the installed `milestone-driver`'s `read-doc-section` primitive. (.claude-plugin/plugin.json `dependencies`; docs/resolution.md §"Dependency note" + §"Finding the driver primitive"; the `scripts/` tree.)
+> A **Claude Code plugin** — markdown skills (`skills/review/SKILL.md`) + a markdown agent (`agents/coherence-reviewer.md`) + cross-platform script twins (bash `*.sh` / PowerShell 7+ `*.ps1`). No application runtime, no compiled language, no framework. JSON tooling is `jq` (bash) / built-in `ConvertFrom-Json` (pwsh). Expects the `superpowers` plugin (claude-plugins-official) installed alongside it as a documented prerequisite, not auto-installed (BRIEF.md §"Integration" l.95; README.md §"Requires"), and, at runtime, the installed `milestone-driver`'s `read-doc-section` primitive (docs/resolution.md §"Dependency note" + §"Finding the driver primitive"; the `scripts/` tree).
 
 ## Approved libraries (by purpose)
 One approved choice per purpose, so a redundant alternative is easy to spot.
