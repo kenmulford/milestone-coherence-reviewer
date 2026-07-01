@@ -36,10 +36,10 @@ this point (`BRIEF.md` l.35):
 
 | Part | Source | Resolved by |
 | --- | --- | --- |
-| **The built diff** | the branch / PR under review, against `integrationBranch` | the orchestrator |
+| **The built diff** — or, for a sweep, the **sweep seed** (no diff) | per-change: the branch / PR under review, against `integrationBranch`. For a sweep there is **no diff** — the mandatory first context part is the sweep seed: a broad scan of all `sourceGlobs` (default), or one named `<pattern>` | the orchestrator |
 | **The resolved `.project/` sections** | the cited `conventions.md` / `design-system.md` / `library-manifest.md` / `design-philosophy.md` sections, verbatim | `resolve-config.{sh,ps1} docs …` (issue #2) — read once |
 | **The `domainSkills` pointers** | the stack's best-practice sources from the driver profile | `resolve-config.{sh,ps1} keys …` (issue #2) — read once |
-| **The bounded, diff-keyed grep results** | greps within `sourceGlobs` for the specific symbols the diff introduces — never a whole-repo scan | the orchestrator (diff-keyed) |
+| **The bounded grep results** — diff-keyed (per-change) / seed-or-broad-keyed on demand (sweep) | greps within `sourceGlobs` for the specific symbols the diff introduces — never a whole-repo scan (on the per-change path; for the opt-in sweep it is a seed/broad-keyed scan over `sourceGlobs` on demand — still bounded, still hard-grounded) | the orchestrator (diff-keyed per-change; seed/broad-keyed on demand for the sweep) |
 
 This is the **same** review context the #3 engine documents under "What you
 receive" — the orchestrator builds it and hands it to the engine; the engine does
@@ -49,18 +49,20 @@ not re-read whole docs or re-resolve the shared keys.
 
 The orchestrator dispatches the read-only review engine (#3,
 `agents/coherence-reviewer.md`) **once** against that context. The engine returns
-its structured `FINDINGS` block — that block **is** the consolidated analysis.
-Nothing in this layer re-runs it, augments it from raw sources, or asks a second
-subagent to re-derive any part of it.
+its structured `FINDINGS` block **and** a parallel `PROPOSALS` block — together
+those two blocks **are** the consolidated analysis. Nothing in this layer re-runs
+it, augments it from raw sources, or asks a second subagent to re-derive any part
+of it.
 
-The consolidated analysis is exactly the engine's return block. Its fields (from
+The consolidated analysis is exactly the engine's return block — `FINDINGS` (the
+drift) **and** `PROPOSALS` (the rule-authoring lane). Its fields (from
 `agents/coherence-reviewer.md`, "Structured return block") are the only material
 the slices below are built from:
 
 | Field | Scope | Meaning |
 | --- | --- | --- |
-| `REVIEWED` | top-level | the branch / PR / diff-ref that was reviewed |
-| `SOURCES.app-grep` | top-level | `ran` or `skipped-no-source-paths` |
+| `REVIEWED` | top-level | per-change: the branch / PR / diff-ref that was reviewed; sweep: `sweep:broad` \| `sweep:<pattern>` (`agents/coherence-reviewer.md` §"Sweep-mode") |
+| `SOURCES.app-grep` | top-level | per-change: `ran` \| `skipped-no-source-paths`; sweep: `swept-broad` \| `swept-pattern:<pattern>` (§"Sweep-mode") |
 | `SOURCES.project-docs` | top-level | `<N sections>` or `none` |
 | `SOURCES.domain-skills` | top-level | `<N sources>` or `none` |
 | `symbol` | per finding | the diff symbol/pattern the finding is keyed to |
@@ -68,10 +70,27 @@ the slices below are built from:
 | `grounding` | per finding | **exactly one** ref — `.project/<doc>#<section>` \| `<path>:<line>` \| `domainSkills:<source>` |
 | `severity` | per finding | the drift-size hint — `drift-trivial` \| `drift-small` \| `drift-medium` \| `drift-large` |
 | `description` | per finding | one plain-English line: what diverges and from what |
+| `heading` | per proposal | the proposed `## conventions.md` heading — a stable citation anchor |
+| `rule` | per proposal | the one-line rule for the `>` blockquote |
+| `exemplar` | per proposal | `path:line` — the canonical exemplar the entry cites |
+| `sites` | per proposal | the ≥3 consistent sites (agree), or the cluster sites (disagree) |
+| `disagree` | per proposal | `yes` = a mixed/disagreeing cluster (the rule recommends a grounded winner) \| `no` = a consensus |
+| `diverging` | per proposal | only when `disagree: yes` — the sites differing from the recommended winner (surfaced, **not** auto-changed) |
+| `source` | per proposal | `per-change` (this diff-keyed review) \| `sweep` (the app-wide sweep feeds the same lane) |
+| `grounding` | per proposal | **exactly one** ref — `domainSkills:<source>` \| `<path>:<line>` \| `.project/<doc>#<section>` |
 
 The `FINDINGS: none` sentinel (the literal inline scalar) is the engine's
 clean-fit outcome and is handled as the [zero-findings terminal](#zero-findings--a-clean-terminal)
 below.
+
+The `PROPOSALS: none` sentinel (the parallel inline scalar) is the no-proposal
+outcome. The two blocks are **independent**: a run can carry findings with no
+proposals, proposals with no findings, both, or neither. They also route to
+**different lanes** — `FINDINGS` route by drift size (#6), but a **proposal is
+not drift-routed**: it goes to a **config-only PR** (`skills/review/SKILL.md`
+Step 3), targeting `integrationBranch` and human-gated, independent of the
+drift buckets (`docs/heal-routing.md` §"Convention proposals are a separate
+lane").
 
 ## Step 3 — Distribute minimal, self-contained slices
 
@@ -179,11 +198,16 @@ pattern.
 ## Zero-findings — a clean terminal
 
 When the analysis yields `FINDINGS: none` (the engine's clean-fit sentinel),
-there is **nothing to distribute**:
+there is **no drift to distribute**:
 
 - No slices are derived.
 - No downstream subagent is dispatched.
-- The review call ends.
+- The review call ends — **once the independent `PROPOSALS` lane is also
+  spent**. `FINDINGS: none` speaks to the **drift** lane only; a run can still
+  carry a `PROPOSALS` entry (the two blocks are independent), which routes to its
+  config-only PR (`skills/review/SKILL.md` Step 3) regardless. The fully-clean
+  terminal is `FINDINGS: none` **and** `PROPOSALS: none` — nothing to distribute
+  either way.
 
 This is a **valid, non-error terminal outcome** — the change fits how the app is
 already built, so there is no drift to route (`BRIEF.md` §"degrade cleanly" l.89;
@@ -201,8 +225,9 @@ does not change the terminal outcome.
 ## Read-only engine, orchestrator acts
 
 The consolidated analysis is produced by the **read-only review engine** (#3): it
-returns findings + grounding and does nothing else — it heals nothing, writes no
-files, opens no issues, runs no `gh` (`BRIEF.md` §"Recorded decisions" l.113).
+returns findings **and** proposals (both grounded) and acts on nothing else — it
+heals nothing, writes no files, opens no issues, opens no PR, runs no `gh`
+(`BRIEF.md` §"Recorded decisions" l.113).
 
 The **heal action** — re-dispatching the implementer for an inline fix, opening
 issues, handing the feeder a brief — is performed by the **orchestrator** (the
@@ -249,14 +274,22 @@ slice to the route's fixed shape, validated against the
 
 ## Analyze-once contract (summary)
 
-- The review **context** (diff + resolved `.project/` sections + `domainSkills`
-  pointers + diff-keyed greps) is assembled **once** per review call.
-- The consolidated **analysis** (the #3 engine's `FINDINGS` block) is produced
-  **once** per review call — regardless of N findings or M dispatches.
+- The review **context** — the built diff (per-change) or the sweep seed / broad
+  scan with **no diff** (the opt-in sweep), plus the resolved `.project/`
+  sections + `domainSkills` pointers + the bounded greps (diff-keyed per-change;
+  seed/broad-keyed over `sourceGlobs` on demand for the sweep) — is assembled
+  **once** per review call.
+- The consolidated **analysis** (the #3 engine's `FINDINGS` **and** `PROPOSALS`
+  blocks) is produced **once** per review call — regardless of N findings or M
+  dispatches.
 - Each downstream dispatch gets a **minimal, self-contained slice** derived from
   that single analysis: inline-fix = `{ finding + citation + file scope }`;
   large-drift = a tight adjustments brief. Never the whole analysis, the raw
   `.project/` sections, or a raw repo dump.
+- **Convention proposals are a separate lane** — the `PROPOSALS` block is **not**
+  drift-routed; each proposal goes to a config-only PR (`skills/review/SKILL.md`
+  Step 3) targeting `integrationBranch`, human-gated (`docs/heal-routing.md`
+  §"Convention proposals are a separate lane").
 - An **under-specified slice** (one that would force the consumer to re-read,
   re-grep, or re-derive) is an **orchestration error**, not shipped.
 - **`FINDINGS: none`** → nothing to distribute → no slices, no dispatch → a valid

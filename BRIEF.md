@@ -24,7 +24,7 @@ The most important output isn't the *verdict* — it's a **clear, plain-English 
 
 ## What it checks against (three sources)
 
-1. **The app itself** — bounded, diff-keyed greps for the specific symbols/patterns the change introduces ("does a helper like this already exist in `services/`?", "how do the other controllers do this?"). Not a whole-repo scan.
+1. **The app itself** — bounded, diff-keyed greps for the specific symbols/patterns the change introduces ("does a helper like this already exist in `services/`?", "how do the other controllers do this?"). Not a whole-repo scan **on the per-change path** — the per-change review stays diff-keyed; the opt-in `sweep` is a separate on-demand mode that scans `sourceGlobs` broadly (still bounded, still hard-grounded).
 2. **The project docs** (`.project/`) — `conventions.md`, `design-system.md`, `library-manifest.md`, `design-philosophy.md`. The authoritative spine.
 3. **The stack's best practices** — the framework idioms and approved libraries, pulled from the driver's `domainSkills` (which the bootstrapper already wired) the same way the implementer cites them.
 
@@ -32,7 +32,7 @@ The most important output isn't the *verdict* — it's a **clear, plain-English 
 
 ## Analyze once, then distribute (token efficiency)
 
-The orchestrator does the expensive work **once** and hands pre-digested slices to any subagent — it never makes each subagent re-read the docs, re-grep the repo, or re-derive the findings. Concretely: the orchestrator assembles the review context a single time (the diff, the resolved `.project/` sections, the relevant `domainSkills` pointers, the bounded diff-keyed grep results), produces the consolidated analysis (findings + grounding + heal routing) once, then:
+The orchestrator does the expensive work **once** and hands pre-digested slices to any subagent — it never makes each subagent re-read the docs, re-grep the repo, or re-derive the findings. Concretely: the orchestrator assembles the review context a single time (the diff, the resolved `.project/` sections, the relevant `domainSkills` pointers, the bounded diff-keyed grep results), produces the consolidated analysis (findings + proposals + grounding + heal routing) once, then:
 
 - an **inline-fix** re-dispatch to the implementer gets just that finding + its citation + the exact file scope — not the whole analysis;
 - the **large-drift handoff** to the feeder gets a tight brief of the adjustments — not the raw repo dump.
@@ -109,21 +109,21 @@ It's built autonomously, so the build must produce the standard scaffolding the 
 - **Heals, never gates.** No merge-blocking. Routes the fix by **drift size only**: trivial → inline; small/medium → current-milestone issue; large → handed to `milestone-feeder`, which builds the follow-up milestone and kicks the driver after the active milestone completes (full cycle, automated). **Run length is a driver-side context concern (compaction / subagent isolation), not a coherence routing signal.** The `feeder → driver` auto-handoff is a new capability (companion change), not existing behavior.
 - **Re-review only at new-milestone granularity.** Same-milestone fixes aren't re-reviewed; the loop self-terminates as drift shrinks.
 - **Hard-grounding:** every finding cites a project-doc section, `file:line`, or `domainSkills` source — never an imagined pattern.
-- **Bounded, not whole-repo:** project-docs are the spine; repo greps are diff-keyed.
-- **Read-only agent, orchestrator acts** — the reviewer returns findings + write-up; the driver (or the standalone skill) performs the heal.
+- **Bounded, not whole-repo:** project-docs are the spine; the per-change review's repo greps are diff-keyed, and the opt-in `sweep` scans `sourceGlobs` on demand (both bounded, both hard-grounded).
+- **Read-only agent, orchestrator acts** — the reviewer returns findings + proposals + write-up; the driver (or the standalone skill) performs the heal.
 - **Analyze once, distribute slices.** The orchestrator builds the review context + findings a single time, then hands each subagent only its relevant slice — no subagent re-reads docs, re-greps, or re-derives. Mirrors the driver's resolve-once pattern; keeps token cost flat as findings fan out.
 - **Inline write-up is the deliverable**; issue/PR/memory are the audit trail.
 - **Ship standalone first**, embed in the driver second (companion driver change).
 - **Packaging follows suite conventions.** Own `plugin.json` (version source of truth, start `0.1.0`) + own `marketplace.json` (**no `version` field**); also cataloged in `milestone-suite` via an HTTPS `url` source (companion change). Both install paths kept.
-- It may **propose** a new entry for `conventions.md` when it spots a deliberate repeated pattern — propose, never rewrite (humans own the docs).
+- It may **propose** a new entry for `conventions.md` when it spots a deliberate repeated pattern (≥3 consistent ungoverned sites, or a disagreeing ungoverned cluster with a recommended winner). The tool proposes the entry via a **human-gated, config-only PR** to the integration branch — never the protected branch, never application code. *Propose, never rewrite* still holds in spirit: it never force-writes `conventions.md`; the human gates the PR, and `.project/` is config the tool may author via that gated PR. (The branch-name and gate mechanics are owned by `skills/review/SKILL.md`.)
 - **Nudge on missing upstream (D17).** If project docs / config are absent, surface a one-time, non-blocking notice to run `milestone-bootstrapper` (and that the feeder produces its input) rather than silently degrading.
 
 ## Non-goals
 
 - Not correctness (`/code-review`), not pre-build design (triage), not visual/UX (design-reviewer + visual gate).
 - Not a merge gate / hard stop.
-- Doesn't scan the whole repo every run.
-- Doesn't rewrite project-docs or app code on its own beyond the size-routed heal; never force-pushes or touches the protected branch.
+- The **per-change review** doesn't scan the whole repo every run (it stays diff-keyed); the opt-in `sweep` is a separate on-demand mode that scans `sourceGlobs` broadly.
+- Doesn't rewrite app code on its own beyond the size-routed heal, and doesn't force-write project **prose** docs — but it **may open a config-only PR** proposing a `.project/conventions.md` entry (human-gated, targeting `integrationBranch`; `.project/` is config the tool may author via a gated PR). It still never rewrites application code, never force-pushes, and never touches the protected branch.
 
 ## Constraints
 
