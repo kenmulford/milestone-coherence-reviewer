@@ -33,7 +33,7 @@ The reference implementations to copy when building something similar. Point at 
 | For… | Mirror | Notes |
 |---|---|---|
 | a cross-platform script twin | `scripts/resolve-config.sh` + `scripts/resolve-config.ps1` | byte-for-byte identical output across hosts; TAB-separated record stream (docs/resolution.md) |
-| a read-only review engine / agent | `agents/coherence-reviewer.md` | structured FINDINGS return block; hard-grounding rule; returns findings, acts on nothing |
+| a read-only review engine / agent | `agents/coherence-reviewer.md` | structured FINDINGS + PROPOSALS return block; hard-grounding rule; returns findings + proposals, acts on nothing (the orchestrator acts) |
 | a skill (orchestrator) entry point | `skills/review/SKILL.md` | resolve → engine → analyze-once → write-up → heal-route; read-only on the merge |
 | a contract doc | `docs/resolution.md` | spec-style; cites BRIEF.md by section + line; degradation matrix + exit-code tables |
 
