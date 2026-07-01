@@ -9,10 +9,10 @@ one-click way to redo it differently if you disagree* (`BRIEF.md`
 This doc is the **write-up contract** — the shape of that note, where it lands,
 and how it degrades. It is implemented by the standalone `review` skill (#7) and
 rendered from the [review engine](../agents/coherence-reviewer.md)'s (#3)
-`FINDINGS` block, distributed through the
+`FINDINGS` **and** `PROPOSALS` blocks, distributed through the
 [analyze-once](analyze-once.md) (#4) slices. The write-up **renders** from that
 single consolidated analysis — it never re-greps the repo, re-reads a doc, or
-re-derives a finding (`BRIEF.md` l.35-40, l.114).
+re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 
 > Scope note. This doc **specifies** the write-up and its mirrors. It does not
 > itself run `gh` or post comments — the `review` skill (#7) enacts the issue and
@@ -21,9 +21,14 @@ re-derives a finding (`BRIEF.md` l.35-40, l.114).
 
 ## What the write-up renders from (no re-derivation)
 
-The write-up is built **entirely** from the engine's `FINDINGS` block, handed
-across as the analyze-once analysis. Every field it shows is a field that block
-already carries — the renderer transforms, it does not discover.
+The write-up is built **entirely** from the engine's `FINDINGS` **and**
+`PROPOSALS` blocks, handed across as the analyze-once analysis. Every field it
+shows is a field one of those blocks already carries — the renderer transforms,
+it does not discover. The **sole** non-engine-field the renderer shows is the
+orchestrator-created **config-only PR link** for a proposal — not an engine field
+but a live **orchestrator artifact** (the PR the orchestrator opened at
+`skills/review/SKILL.md` Step 3), labeled as such wherever it appears — so the
+headline invariant is honest, not contradicted below.
 
 | Write-up element | Built from (engine `FINDINGS` field) |
 | --- | --- |
@@ -36,7 +41,11 @@ already carries — the renderer transforms, it does not discover.
 The renderer adds no claim that is not backed by a field above. A finding the
 engine dropped for lack of grounding (the hard-grounding rule) never appears in
 the write-up — the write-up cannot manufacture grounding the engine refused to
-emit.
+emit. The same discipline governs the `PROPOSALS` block: the
+[Proposed convention](#proposed-convention--rendered-from-the-proposals-block)
+section renders **only** from that block's fields (plus the live PR link the
+orchestrator opened for that proposal — a real artifact, not a fabricated
+claim), and `PROPOSALS: none` renders **nothing** — never a false proposal.
 
 ## The shape, per coherence call
 
@@ -81,6 +90,41 @@ gh issue create --repo <repo> --title "<imperative revisit title>" --body "<scop
 
 The one-liner is **per finding** — it redoes *that* divergence, not the whole
 review. Quote the title and body so the line pastes and runs as-is.
+
+## Proposed convention — rendered from the `PROPOSALS` block
+
+Where the per-finding items above render the drift (`FINDINGS`), the write-up
+**also** renders a **Proposed convention** section — one item per entry in the
+engine's `PROPOSALS` block (`agents/coherence-reviewer.md` §"Convention
+proposals"). It reports the rule the orchestrator opened as a config-only PR for
+the human to accept (merge) or reject (close). A proposal is **not** a drift fix
+and carries **no** redo one-liner — its "redo" is merging or closing the PR.
+
+Per proposal, in order:
+
+1. **The proposed heading** — the entry's `## <heading>`, shown verbatim (a
+   stable citation anchor).
+2. **The rule** — the one-line `rule` that becomes the `>` blockquote.
+3. **The exemplar** — the `exemplar` `path:line` the entry cites.
+4. **The diverging sites** — shown **only when `disagree: yes`**: the `diverging`
+   `file:line` list (the sites differing from the recommended winner, surfaced,
+   not auto-changed). Omitted entirely when `disagree: no`.
+5. **The config-PR link** — a link to the config-only PR the orchestrator opened
+   for this proposal (`skills/review/SKILL.md` Step 3), targeting
+   `integrationBranch`. **Merge to accept, close to reject.**
+
+| Write-up element | Built from (engine `PROPOSALS` field) |
+| --- | --- |
+| the proposed heading | each proposal's `heading` |
+| the rule | the `rule` line |
+| the exemplar | the `exemplar` `path:line` |
+| the diverging sites (only when `disagree: yes`) | the `diverging` `file:line` list |
+| the config-PR link | the PR the orchestrator opened for this proposal (not an engine field — a live artifact) |
+
+`PROPOSALS: none` renders **no Proposed convention section at all** — no false
+proposal, exactly as `FINDINGS: none` renders no per-finding items. The renderer
+never manufactures a proposal the engine did not emit, and a proposal the engine
+dropped for lack of grounding never appears here.
 
 ## Four landing places, two tiers (not equal)
 
@@ -229,8 +273,13 @@ mirrors accrue quietly as the audit trail.
 
 - The write-up is the **primary deliverable** — not the verdict (`BRIEF.md` l.23,
   l.115).
-- It **renders** from the engine's single `FINDINGS` block via the analyze-once
-  slices — it never re-greps, re-reads a doc, or re-derives a finding.
+- It **renders** from the engine's `FINDINGS` **and** `PROPOSALS` blocks via the
+  analyze-once slices — it never re-greps, re-reads a doc, or re-derives a
+  finding or a proposal.
+- **Proposed convention**: one item per `PROPOSALS` entry — heading · rule ·
+  exemplar · diverging sites (only when `disagree: yes`) · a link to the
+  config-only PR the orchestrator opened. `PROPOSALS: none` renders nothing —
+  never a false proposal.
 - **Per coherence call**, each item is: what it did · why · the citations · a
   copy-paste `gh issue create --repo … --title … --body …` redo one-liner —
   matching `BRIEF.md` l.72 verbatim.

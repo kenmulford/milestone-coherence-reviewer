@@ -106,6 +106,25 @@ other milestone. What the feeder can and cannot do next (create the milestone,
 but not auto-run the driver in standalone v1) is the
 [deferred boundary](#the-deferred-boundary--feeder--driver-auto-handoff-not-built-here).
 
+## Convention proposals are a separate lane (not drift-routed)
+
+The engine also returns a `PROPOSALS` block, parallel to `FINDINGS`
+(`agents/coherence-reviewer.md` §"Convention proposals"). A **proposal** is
+**not** a drift fix — it carries no `severity` — so this router does **not**
+route it. The drift-size router above (`drift-trivial` / `drift-small` /
+`drift-medium` / `drift-large`) is **unchanged**: it routes **findings** only.
+
+- **Findings route on drift size** (the route table above).
+- **Proposals route to a config-only PR** — the `review` skill's Step 3
+  (`skills/review/SKILL.md`) writes the entry into `.project/conventions.md` on a
+  `chore/propose-<slug>` branch and opens a config-only PR to `integrationBranch`
+  (human-gated), independent of the drift buckets.
+
+The two lanes never cross: a proposal never becomes a drift-routed issue, and a
+drift finding never becomes a config PR. Like every route here, the proposal lane
+**never gates** — the config PR is opened for the human to accept or reject, and
+the change under review merges either way.
+
 ## Never a gate — the merge proceeds regardless
 
 The router runs **after the change is built**, and its output **never feeds a
@@ -274,6 +293,10 @@ keep judgment in the orchestrator.
   small/medium → a new issue on the current milestone; large → a brief to
   `milestone-feeder`, which plans + creates the follow-up milestone with its own
   triage gate. Each `severity` value has exactly one destination.
+- **Convention proposals — a separate lane, not drift-routed.** The engine's
+  `PROPOSALS` block does not route through this router; a proposal goes to a
+  config-only PR (`skills/review/SKILL.md` Step 3) targeting
+  `integrationBranch`, human-gated — never a drift bucket, and never a gate.
 - **Each route receives its #4 slice, not the analysis.** inline = the
   `{ finding + citation + file scope }` slice; large = the adjustments brief. The
   slice **shapes** are defined in [analyze-once.md](analyze-once.md); this doc
