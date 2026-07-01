@@ -2,6 +2,34 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
+## v0.2.0 — Coherence beyond per-change drift
+
+**Theme:** Coherence beyond per-change drift — an opt-in app-wide consistency scan and config rule-authoring, closing the loop back into `.project/`.
+
+### ✨ Coherence beyond per-change drift
+
+| Issue | PR | What |
+|---|---|---|
+| #29 Propose conventions.md entries (rule-authoring) | #31 | Adds a `PROPOSALS` return block parallel to `FINDINGS`. When the engine spots a repeated ungoverned pattern (≥3 consistent sites, or a disagreeing cluster with a grounded recommended winner), it proposes a `.project/conventions.md` rule; the orchestrator writes the entry and opens a **human-gated config-only PR** to the integration branch (review Step 3), rendered in the write-up. Proposals are a separate lane (not drift-routed). The engine stays read-only (returns findings **and** proposals, opens no PR); the tool never touches application code or the protected branch, and never gates the merge. |
+| #28 Opt-in app-wide sweep + engine sweep-mode | #32 | Adds `/milestone-coherence-reviewer:sweep [pattern]` — a broad-by-default (or pattern-narrowed) app-wide consistency scan. A read-only engine **sweep-mode** classifies standing inconsistency clusters (agree / disagree / governed, with the *defensible-deviation* split: a documented, cited deviation is not drift) and feeds ungoverned repeated clusters into the #29 PROPOSALS lane, routing undocumented-deviation drift through the existing size buckets. The "no whole-repo scan" non-goal is scoped to the per-change path; the sweep is the separate on-demand mode. Reuses `review`'s resolve-config, write-up, mirrors, Step-3 config-PR, and heal-routing by reference. |
+
+### 🔧 Fixes
+
+| Issue | PR | What |
+|---|---|---|
+| #27 Remove the now-dead `allowCrossMarketplaceDependenciesOn` | #30 | Removed the dead `allowCrossMarketplaceDependenciesOn` key from `.claude-plugin/marketplace.json` — it permitted a cross-marketplace dependency already removed from `plugin.json`, and this repo was the last in the suite still carrying it. Also bumped `plugin.json` to `0.2.0`. |
+
+### Consumer notes (upgrading from v0.1.1)
+
+- **New skill:** `/milestone-coherence-reviewer:sweep [pattern]` — an opt-in, on-demand app-wide consistency scan (broad by default, or narrowed to a named pattern). The per-change `review` skill is unchanged.
+- **New engine output + write surface:** the engine now returns a `PROPOSALS` block alongside `FINDINGS`. Both `review` and `sweep` may open a **config-only PR** proposing a `.project/conventions.md` entry — human-gated (merge = accept, close = reject), targeting the integration branch, never the protected branch, never application code. The engine stays read-only; the orchestrator opens the PR.
+- **Non-goal narrowed:** "no whole-repo scan" now scopes to the *per-change* path (which stays diff-keyed and flat-cost); the opt-in `sweep` is the separate on-demand mode (scope-bounded to `sourceGlobs`, never per-run).
+- **No schema changes** to `.milestone-config/driver.json` — no new profile keys; `coherenceReviewAgent` is default-filled.
+
+### ⚖️ Post-run audit trail
+
+Judgment-call PRs for this release: none
+
 ## v0.1.1 — Claude Desktop slash-command fix
 
 **Theme:** drop the cross-marketplace `superpowers` dependency so the plugin's slash commands register in Claude Desktop (they already worked in the Claude Code CLI). Mirrors [kenmulford/milestone-driver#246](https://github.com/kenmulford/milestone-driver/issues/246).
