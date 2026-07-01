@@ -37,6 +37,7 @@ headline invariant is honest, not contradicted below.
 | the citations | each finding's single `grounding` ref (`.project/<doc>#<section>` \| `<path>:<line>` \| `domainSkills:<source>`) |
 | how much drift | the `severity` hint (informs the redo one-liner's scope) |
 | clean-fit headline | the `FINDINGS: none` sentinel + the `SOURCES` lines |
+| the swept scope (sweep runs) | the top-level `REVIEWED` / `SOURCES.app-grep` **sweep** values → "scanned: broad" \| "scanned: pattern `<pattern>`" (`agents/coherence-reviewer.md` §"Sweep-mode") |
 
 The renderer adds no claim that is not backed by a field above. A finding the
 engine dropped for lack of grounding (the hard-grounding rule) never appears in
@@ -46,6 +47,17 @@ emit. The same discipline governs the `PROPOSALS` block: the
 section renders **only** from that block's fields (plus the live PR link the
 orchestrator opened for that proposal — a real artifact, not a fabricated
 claim), and `PROPOSALS: none` renders **nothing** — never a false proposal.
+
+For a **sweep** run the write-up also renders the **swept scope** — read from the
+two sweep-valued top-level header fields (`REVIEWED: sweep:broad | sweep:<pattern>`
+and/or `SOURCES.app-grep: swept-broad | swept-pattern:<pattern>`,
+`agents/coherence-reviewer.md` §"Sweep-mode") — surfaced as **"scanned: broad"**
+or **"scanned: pattern `<pattern>`"**. This is a **parallel case**, not a change
+to the per-change render path: a per-change run carries the per-change
+`REVIEWED` / `SOURCES.app-grep` values and renders no scanned-scope line. These
+are engine fields, so the "renders only from engine fields" contract still holds —
+the sweep header values now have a real documented consumer here (so the scope is
+read, never invented).
 
 ## The shape, per coherence call
 
@@ -166,6 +178,13 @@ l.141 "what fits, what doesn't").
   redo. The clean-fit write-up states what was checked (read from the `SOURCES`
   lines: which of app-grep / project-docs / domain-skills were available) so the
   reader can tell a genuine clean fit from a thin-grounding run.
+- For a **sweep** run the clean-fit headline additionally states **what was
+  scanned** — the swept scope, "scanned: broad" or "scanned: pattern
+  `<pattern>`", read from the sweep-valued `REVIEWED` / `SOURCES.app-grep` header
+  fields (`agents/coherence-reviewer.md` §"Sweep-mode"). This is the render
+  contract the sweep's empty-state reuses to surface "what was scanned"
+  (`skills/sweep/SKILL.md` §"Empty state") — a parallel case; the per-change
+  clean-fit headline is unchanged.
 - Absence of findings is an **explicit statement**, never an absent output. The
   reviewer reports both halves — what fits and what doesn't.
 
@@ -287,7 +306,9 @@ mirrors accrue quietly as the audit trail.
   issue comment, and the PR comment are supplemental audit-trail copies of the
   same content.
 - **Empty state**: zero findings still produces a "fits cleanly — nothing
-  changed" headline — never silence.
+  changed" headline — never silence; a **sweep** run's headline additionally
+  states the swept scope ("scanned: broad" \| "scanned: pattern `<pattern>`", read
+  from the sweep-valued `REVIEWED` / `SOURCES.app-grep` header fields).
 - **Tight**: concise, flat, no wall-of-text; flat-cost as findings fan out.
 - **Graceful degradation**: an unavailable mirror is skipped and noted; it never
   suppresses the primary inline summary.
