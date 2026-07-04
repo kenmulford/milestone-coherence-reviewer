@@ -1,4 +1,6 @@
-# milestone-coherence-reviewer
+<p align="center">
+  <img src="assets/milestone-coherence-reviewer.svg" alt="milestone-coherence-reviewer — a milestone suite plugin" width="900">
+</p>
 
 After a change is built, checks whether it fits how the rest of the app is already built — existing helpers and patterns, your conventions, the stack's idioms — then fixes small drift inline and files bigger drift as issues or a follow-up milestone. Never blocks the merge; leaves a short note on what it changed, why, and how to redo it. Distinct from code review (correctness) and triage (design).
 
