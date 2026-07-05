@@ -104,18 +104,30 @@ The engine's `PROPOSALS` block is a **separate lane** from the drift-size routin
 
 2. **Dedupe before opening — match deterministically, never fuzzily.** Skip the proposal when **an open PR on the exact head branch `chore/propose-<slug>` already exists** (`gh pr list --state open --head "chore/propose-<slug>" --json number`, or `git ls-remote --heads origin "chore/propose-<slug>"`) **OR** `.project/conventions.md` **already carries that `## heading`** (an exact-heading scan). Match on the exact head branch and the exact heading — **never** a fuzzy full-text `--search`, which false-positives on an unrelated PR that merely mentions the slug and misses a reworded duplicate. The engine may hint at a likely duplicate; the orchestrator enforces the dedupe (`agents/coherence-reviewer.md` §"Convention proposals" — Suppress).
 
-3. **Write the entry + open the config-only PR.** For each surviving proposal:
+3. **Write the entry + open the config-only PR (act → verify → retry-once → post-create-verify → dedupe-recheck).** For each surviving proposal:
 
    | Step | How |
    |---|---|
    | cut the branch | `chore/propose-<slug>` off `integrationBranch` — `<slug>` is the kebab-cased `heading`; **never** off `protectedBranch` |
    | write the entry | append to `.project/conventions.md`, mirroring the existing shape (`.project/conventions.md` header comment): a stable `## <heading>` + a `> <rule>` blockquote + the `exemplar` `path:line`; optionally a row in the "Canonical exemplars" table. When `disagree: yes`, the `rule` recommends the grounded winner and the entry notes the `diverging` sites |
    | commit | Conventional Commits with the PR-number suffix — e.g. `chore: propose conventions.md#<heading> (#<pr>)` (`.project/conventions.md#"Commits & PRs"`) |
-   | open the PR | `gh pr create --base <integrationBranch> …` — a **config-only PR to `integrationBranch`**, **NEVER** `protectedBranch`. The human **merges to accept**, **closes to reject** |
+   | open the PR — **attempt** | `gh pr create --base <integrationBranch> …` — a **config-only PR to `integrationBranch`**, **NEVER** `protectedBranch` |
+   | **verify** the attempt | `gh pr view <branch> --json number` (the same `gh pr view … --json` pattern already used for PR resolution earlier in this file) — confirm the PR now exists |
+   | on a **failed** attempt (verify finds no PR) | run `gh auth status` (surfaces an auth problem rather than masking it), then **retry the create exactly once**, then verify again — the retry budget is exactly one extra attempt, **never** an unbounded loop |
 
-   These PRs are opened **here (Step 3), before the write-up renders (Step 4)**, so the Proposed convention section (Step 4, item 2) names each surviving proposal with its **live PR link**.
+   On a **verified-successful create** (whether from the first attempt or the retry), run a **post-create content verify** before treating it as live — confirm the created PR's diff touches **exactly** `.project/conventions.md` and carries the expected `## <heading>` (the same entry shape as the "write the entry" row above):
 
-4. **Best-effort — a failure is skipped-and-noted, never a crash or a gate.** A branch-cut or PR-open failure (auth, network, a protected `.project/` path) is **skipped and noted**, exactly like the write-up's mirror-degradation pattern (Step 4; `docs/write-up.md` §"Graceful degradation") — it never crashes the run and never gates the merge (`BRIEF.md` l.89). Step 4 then renders the skipped-and-noted failure in place of that proposal's PR link. The change under review merges regardless.
+   | Content-verify outcome | What happens |
+   |---|---|
+   | verified, no duplicate | treat this PR as the proposal's **live link** — the happy path |
+   | verified, but a **duplicate** is found (a second open PR now exists on the exact head branch `chore/propose-<slug>`, OR `.project/conventions.md` already carries that exact `## heading`) | re-run the **same** dedupe match from item 2 above (never a new or fuzzy rule) to confirm. The **earlier-existing** PR is authoritative — close this run's just-created PR (`gh pr close <this-run's-PR-number>` with a short comment noting it duplicates the earlier PR) and render a note about the closed duplicate in place of a second link — **never** two rendered links |
+   | content verify fails for a **non-duplicate** reason (diff doesn't touch exactly `.project/conventions.md`, or lacks the expected heading, and it is not a duplicate) | fall back to item 4's skipped-and-noted path below — this repo's fail-soft / absence-means-skip convention (`.project/design-philosophy.md#Error & failure philosophy`): surface it, never a crash, never silently treat the malformed PR as the live link |
+
+   If the retry **also** fails (verify still finds no PR after the retry) → fall back to item 4's skipped-and-noted path below, exactly as today — no crash, no unbounded retry loop.
+
+   The human **merges to accept**, **closes to reject** the surviving, verified PR. These PRs are opened **here (Step 3), before the write-up renders (Step 4)**, so the Proposed convention section (Step 4, item 2) names each surviving proposal with its **live PR link** — or, when a race closed this run's duplicate, the note about the closed duplicate in its place.
+
+4. **Best-effort — a failure is skipped-and-noted, never a crash or a gate.** This is the shared terminal fallback for all three failure classes: (a) a branch-cut, write-the-entry, or commit failure (auth, network, a protected `.project/` path — existing, no retry applies to these pre-create steps), (b) a `gh pr create` that fails on both the initial attempt and the retry (new), and (c) a non-duplicate post-create content-verify failure (new). Each is **skipped and noted**, exactly like the write-up's mirror-degradation pattern (Step 4; `docs/write-up.md` §"Graceful degradation") — it never crashes the run and never gates the merge (`BRIEF.md` l.89). Step 4 then renders the skipped-and-noted failure in place of that proposal's PR link. The change under review merges regardless.
 
 ### Step 4 — Render the write-up (#5): inline PRIMARY, then the supplemental mirrors
 
@@ -129,7 +141,7 @@ Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS
 
    This reuses the suite's issue-create primitive (`docs/write-up.md` §"The gh issue create redo one-liner"; convention `milestone-feeder/skills/create/SKILL.md:182`). Keep it **tight** — one short item per finding, what/why/citation/one-liner, never an essay; the output does not balloon as findings fan out (`docs/write-up.md` §"Tight and legible"; `BRIEF.md` l.74).
 
-2. **Render the Proposed convention section from the `PROPOSALS` block** (`docs/write-up.md` §"Proposed convention"). Per proposal, in order: the proposed `## heading` · the one-line `rule` · the `exemplar` `path:line` · the **diverging** sites (only when `disagree: yes`) · a link to the **config-only PR** the orchestrator **already opened** for it at **Step 3** (or, when that PR could not be opened, the skipped-and-noted failure from Step 3). A proposal carries **no** redo one-liner — its redo is *merging or closing that PR*. `PROPOSALS: none` → render **no** Proposed convention section (never a false proposal), and a proposal suppressed at Step 3 (degraded repo) is not rendered here. This section is a **separate lane** from the drift findings above — it renders the rule-authoring output, not a drift fix.
+2. **Render the Proposed convention section from the `PROPOSALS` block** (`docs/write-up.md` §"Proposed convention"). Per proposal, in order: the proposed `## heading` · the one-line `rule` · the `exemplar` `path:line` · the **diverging** sites (only when `disagree: yes`) · a link to the **config-only PR** the orchestrator **already opened** for it at **Step 3** — one of three states: the **live PR link** (the happy path, or the surviving earlier PR when Step 3's post-create verify closed this run's duplicate — paired with a **note about the closed duplicate**, never a second link); or, when no valid PR resulted — either no PR was ever created (attempt + retry both failed) or a PR was created but failed the non-duplicate content-verify check — the **skipped-and-noted failure** from Step 3 item 4. A proposal carries **no** redo one-liner — its redo is *merging or closing that PR*. `PROPOSALS: none` → render **no** Proposed convention section (never a false proposal), and a proposal suppressed at Step 3 (degraded repo) is not rendered here. This section is a **separate lane** from the drift findings above — it renders the rule-authoring output, not a drift fix.
 
 3. **Clean-fit (`FINDINGS: none`) still produces a write-up — never silence** (`docs/write-up.md` §"The empty / clean-fit state"). Render a positive "**Fits cleanly — nothing changed**" headline that states **what was checked** (read from the `SOURCES` lines — which of app-grep / project-docs / domain-skills were available, so a genuine clean fit reads distinct from a thin-grounding run). No per-finding items, no redo one-liners — there is nothing to redo, and nothing is opened. (`FINDINGS: none` and `PROPOSALS: none` are independent: a clean-fit run may still carry a proposal, and a run with findings may carry none.)
 
@@ -149,12 +161,17 @@ For each finding, route on its `severity` field **and nothing else** — not run
 
 | `severity` | Route (standalone) | Destination |
 |---|---|---|
-| `drift-trivial` | **degrades to a small-issue note** — no build loop to re-dispatch the implementer (`BRIEF.md` l.78) | a new issue on the **current** milestone, carrying the finding + its grounding |
-| `drift-small` | **new issue** | a new issue on the **current** milestone |
-| `drift-medium` | **new issue** | a new issue on the **current** milestone |
+| `drift-trivial` | **degrades to a small-issue note** — no build loop to re-dispatch the implementer (`BRIEF.md` l.78) | a new issue carrying the finding + its grounding |
+| `drift-small` | **new issue** | a new issue carrying the finding + its grounding |
+| `drift-medium` | **new issue** | a new issue carrying the finding + its grounding |
 | `drift-large` | **hand a brief to `milestone-feeder`** — the [large-drift slice](../../docs/analyze-once.md): a tight adjustments brief with citations, never a raw repo dump | `milestone-feeder` plans + creates the follow-up milestone (its own triage gate) |
 
-1. **Small / medium / standalone-degraded trivial → a current-milestone issue.** Open it via `gh issue create` (the same primitive as the write-up's redo one-liner), carrying the finding's `description` + `symbol` and its single `grounding` ref so the issue starts hard-grounded. These same-milestone fixes are **not** re-coherence-reviewed (`docs/heal-routing.md` §"Same-milestone fixes are not re-reviewed").
+**Reconcile the "current milestone" assumption — a standalone run may have none.** The table above opens the `drift-small` / `drift-medium` (and standalone-degraded `drift-trivial`) issue without hard-coding where it attaches — `review` is itself a standalone entry point, and it may run with **no active milestone at all** (an ad-hoc branch or PR reviewed outside any milestone-driver build loop), so a "current milestone" is never assumed to exist. Reconcile it explicitly, mirroring `sweep`'s own reconciliation for the identical gap (`skills/sweep/SKILL.md:79-83`):
+
+- **A milestone IS contextually active** (this run sits inside a milestone build loop) → attach the new issue to it, exactly as today.
+- **No milestone context is active — or milestone context cannot be reliably determined** (an ambiguous or broken lookup degrades to this same branch rather than erroring or crashing, per the fail-soft / absence-means-skip philosophy — `.project/design-philosophy.md#Error & failure philosophy`) → open the new issue **without** a milestone — a **backlog issue** carrying the finding + its `grounding`. Never invent or assume a "current" milestone.
+
+1. **Small / medium / standalone-degraded trivial → a new issue, milestone-attached or backlog per the reconciliation above.** Open it via `gh issue create` (the same primitive as the write-up's redo one-liner), carrying the finding's `description` + `symbol` and its single `grounding` ref so the issue starts hard-grounded — attached to the current milestone when one is active, opened as a backlog issue when none is. A same-milestone fix is **not** re-coherence-reviewed (`docs/heal-routing.md` §"Same-milestone fixes are not re-reviewed"); a backlog issue carries no milestone loop to re-enter in the first place.
 
 2. **Large → a brief to `milestone-feeder`.** Hand the feeder the large-drift slice (the synthesized adjustments + the grounding refs + the drift scope — `docs/analyze-once.md` §"The large-drift slice"). The feeder plans + creates the follow-up milestone with its own triage gate; this skill **authors no milestone by hand** (`docs/heal-routing.md` §"`drift-large` → a brief to `milestone-feeder`"; `BRIEF.md` l.48).
 
@@ -164,7 +181,7 @@ For each finding, route on its `severity` field **and nothing else** — not run
 
 ### Step 6 — End cleanly
 
-Surface the inline write-up as the run's deliverable, with a flat summary of what was routed where (which mirrors landed, which were skipped-and-noted, which issues/milestone were opened, and — when a large-drift milestone was created — the deferred-boundary note). The review run ends. **The change merged regardless of any of the above** — coherence heals, it does not gate.
+Surface the inline write-up as the run's deliverable, with a flat summary of what was routed where (which mirrors landed, which were skipped-and-noted, which issues/milestone were opened, and — when a small/medium or standalone-degraded-trivial finding landed in the backlog rather than on a milestone — that outcome, per finding; and — when a large-drift milestone was created — the deferred-boundary note). The review run ends. **The change merged regardless of any of the above** — coherence heals, it does not gate.
 
 ## Invariants (always true, every path)
 
