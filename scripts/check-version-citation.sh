@@ -17,8 +17,11 @@
 # Match heuristic (a heuristic by design, not a Markdown/prose parser):
 #   A line only qualifies as a citation once it contains BOTH the literal
 #   substring "plugin.json" (the citing context) AND the literal sequence
-#   `version` (backtick-wrapped) followed, within 12 non-digit characters, by
-#   a semver-shaped token (X.Y.Z). That shape is this repo's own established
+#   `version` (backtick-wrapped) followed, within a short run of punctuation/
+#   whitespace only (no letters or digits — this deliberately excludes prose
+#   like "from 0.1.1 to 0.2.1", which would otherwise let the FIRST, stale
+#   number win over the correct one later in the same sentence), by a
+#   semver-shaped token (X.Y.Z). That shape is this repo's own established
 #   citation style (conventions.md#Versioning, conventions.md:46) — a bare
 #   mention of "plugin.json" or "version" alone, with no trailing number
 #   (e.g. conventions.md:17's "`plugin.json` (version source of truth)", or
@@ -59,7 +62,14 @@ if [ ! -f "${PLUGIN_JSON}" ]; then
   exit 2
 fi
 
-ACTUAL_VERSION="$(jq -r '.version // empty' "${PLUGIN_JSON}")"
+# Guard the jq call explicitly rather than relying on a bare assignment: under
+# `set -e`, a bare `x="$(jq ...)"` whose jq call fails (e.g. malformed JSON)
+# would kill the script with jq's own raw stderr and exit code, bypassing this
+# function's own "ERROR ... exit 2" contract entirely.
+if ! ACTUAL_VERSION="$(jq -r '.version // empty' "${PLUGIN_JSON}" 2>/dev/null)"; then
+  echo "ERROR: ${PLUGIN_JSON} is not valid JSON (jq failed to read it)." >&2
+  exit 2
+fi
 if [ -z "${ACTUAL_VERSION}" ]; then
   echo "ERROR: ${PLUGIN_JSON} has no readable .version field." >&2
   exit 2
@@ -70,16 +80,18 @@ if [ ! -d "${DOCS_DIR}" ]; then
   exit 0
 fi
 
-# The citation shape: `version` followed, within a short non-digit run, by an
-# X.Y.Z token. Matched only on lines that also mention plugin.json (the gate,
-# applied via the `grep -n 'plugin\.json'` pass below).
-CITATION_RE='`version`[^0-9]{0,12}[0-9]+\.[0-9]+\.[0-9]+'
+# The citation shape: `version` followed, within a short punctuation/
+# whitespace-only run (no letters or digits — see the header note on why),
+# by an X.Y.Z token. Matched only on lines that also mention plugin.json (the
+# gate, applied via the `grep -n 'plugin\.json'` pass below).
+CITATION_RE='`version`[^0-9A-Za-z]{0,6}[0-9]+\.[0-9]+\.[0-9]+'
 SEMVER_TAIL_RE='[0-9]+\.[0-9]+\.[0-9]+$'
 
 mismatch=0
 checked_any=0
 
-shopt -s nullglob
+# No nullglob needed: an unmatched glob falls through to the `-f` guard below
+# and `continue`s, same technique as scripts/memory-mirror.sh.
 for f in "${DOCS_DIR}"/*.md; do
   [ -f "${f}" ] || continue
 
@@ -90,6 +102,10 @@ for f in "${DOCS_DIR}"/*.md; do
     content="${grepline#*:}"
 
     # Every non-overlapping `version`+trailing-number occurrence on the line.
+    # Two-pass extraction (full match, then just the numeric tail) rather
+    # than a single capture-group grep: POSIX/BSD-portable `grep -E` has no
+    # capture-group output (that needs `-P`, not available on every grep this
+    # runs against), so isolating the tail is a second bounded grep instead.
     while IFS= read -r match; do
       [ -n "${match}" ] || continue
       cited="$(printf '%s\n' "${match}" | grep -Eo "${SEMVER_TAIL_RE}" || true)"
