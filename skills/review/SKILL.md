@@ -161,12 +161,17 @@ For each finding, route on its `severity` field **and nothing else** — not run
 
 | `severity` | Route (standalone) | Destination |
 |---|---|---|
-| `drift-trivial` | **degrades to a small-issue note** — no build loop to re-dispatch the implementer (`BRIEF.md` l.78) | a new issue on the **current** milestone, carrying the finding + its grounding |
-| `drift-small` | **new issue** | a new issue on the **current** milestone |
-| `drift-medium` | **new issue** | a new issue on the **current** milestone |
+| `drift-trivial` | **degrades to a small-issue note** — no build loop to re-dispatch the implementer (`BRIEF.md` l.78) | a new issue carrying the finding + its grounding |
+| `drift-small` | **new issue** | a new issue carrying the finding + its grounding |
+| `drift-medium` | **new issue** | a new issue carrying the finding + its grounding |
 | `drift-large` | **hand a brief to `milestone-feeder`** — the [large-drift slice](../../docs/analyze-once.md): a tight adjustments brief with citations, never a raw repo dump | `milestone-feeder` plans + creates the follow-up milestone (its own triage gate) |
 
-1. **Small / medium / standalone-degraded trivial → a current-milestone issue.** Open it via `gh issue create` (the same primitive as the write-up's redo one-liner), carrying the finding's `description` + `symbol` and its single `grounding` ref so the issue starts hard-grounded. These same-milestone fixes are **not** re-coherence-reviewed (`docs/heal-routing.md` §"Same-milestone fixes are not re-reviewed").
+**Reconcile the "current milestone" assumption — a standalone run may have none.** The table above opens the `drift-small` / `drift-medium` (and standalone-degraded `drift-trivial`) issue without hard-coding where it attaches — `review` is itself a standalone entry point, and it may run with **no active milestone at all** (an ad-hoc branch or PR reviewed outside any milestone-driver build loop), so a "current milestone" is never assumed to exist. Reconcile it explicitly, mirroring `sweep`'s own reconciliation for the identical gap (`skills/sweep/SKILL.md:79-83`):
+
+- **A milestone IS contextually active** (this run sits inside a milestone build loop) → attach the new issue to it, exactly as today.
+- **No milestone context is active — or milestone context cannot be reliably determined** (an ambiguous or broken lookup degrades to this same branch rather than erroring or crashing, per the fail-soft / absence-means-skip philosophy — `.project/design-philosophy.md#Error & failure philosophy`) → open the new issue **without** a milestone — a **backlog issue** carrying the finding + its `grounding`. Never invent or assume a "current" milestone.
+
+1. **Small / medium / standalone-degraded trivial → a new issue, milestone-attached or backlog per the reconciliation above.** Open it via `gh issue create` (the same primitive as the write-up's redo one-liner), carrying the finding's `description` + `symbol` and its single `grounding` ref so the issue starts hard-grounded — attached to the current milestone when one is active, opened as a backlog issue when none is. A same-milestone fix is **not** re-coherence-reviewed (`docs/heal-routing.md` §"Same-milestone fixes are not re-reviewed"); a backlog issue carries no milestone loop to re-enter in the first place.
 
 2. **Large → a brief to `milestone-feeder`.** Hand the feeder the large-drift slice (the synthesized adjustments + the grounding refs + the drift scope — `docs/analyze-once.md` §"The large-drift slice"). The feeder plans + creates the follow-up milestone with its own triage gate; this skill **authors no milestone by hand** (`docs/heal-routing.md` §"`drift-large` → a brief to `milestone-feeder`"; `BRIEF.md` l.48).
 
@@ -176,7 +181,7 @@ For each finding, route on its `severity` field **and nothing else** — not run
 
 ### Step 6 — End cleanly
 
-Surface the inline write-up as the run's deliverable, with a flat summary of what was routed where (which mirrors landed, which were skipped-and-noted, which issues/milestone were opened, and — when a large-drift milestone was created — the deferred-boundary note). The review run ends. **The change merged regardless of any of the above** — coherence heals, it does not gate.
+Surface the inline write-up as the run's deliverable, with a flat summary of what was routed where (which mirrors landed, which were skipped-and-noted, which issues/milestone were opened, and — when a small/medium or standalone-degraded-trivial finding landed in the backlog rather than on a milestone — that outcome, per finding; and — when a large-drift milestone was created — the deferred-boundary note). The review run ends. **The change merged regardless of any of the above** — coherence heals, it does not gate.
 
 ## Invariants (always true, every path)
 
