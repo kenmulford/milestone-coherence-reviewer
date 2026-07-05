@@ -1,0 +1,37 @@
+name: CI
+
+# Guards .project/*.md version citations against drifting from
+# .claude-plugin/plugin.json's actual `version` (issue #48) — the drift issue
+# #41 fixed upstream: .project/conventions.md:46 cited `0.1.1` while
+# plugin.json's real version was `0.2.0`. This workflow scaffolds the check;
+# wiring its job into develop's required status checks is a separate,
+# human-authorized follow-up (see issue #48 and this PR's description) — not
+# performed here.
+#
+# The job name below ("version-citation-check") is the required-status-check
+# context that follow-up would register in develop's branch protection.
+#
+# Runs on pull_request targeting develop only — this repo's integration
+# branch (.milestone-config/driver.json integrationBranch) — where a
+# .project/ authority-file drift would land.
+
+on:
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version-citation-check:
+    name: version-citation-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code under review
+        uses: actions/checkout@v7
+      - name: Compare .project/*.md version citations against plugin.json
+        run: ./scripts/check-version-citation.sh
