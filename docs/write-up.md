@@ -22,13 +22,32 @@ re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 ## What the write-up renders from (no re-derivation)
 
 The write-up is built **entirely** from the engine's `FINDINGS` **and**
-`PROPOSALS` blocks, handed across as the analyze-once analysis. Every field it
-shows is a field one of those blocks already carries — the renderer transforms,
-it does not discover. The **sole** non-engine-field the renderer shows is the
-orchestrator-created **config-only PR link** for a proposal — not an engine field
-but a live **orchestrator artifact** (the PR the orchestrator opened at
-`skills/review/SKILL.md` Step 3), labeled as such wherever it appears — so the
-headline invariant is honest, not contradicted below.
+`PROPOSALS` blocks, handed across as the analyze-once analysis, refined by the
+Step 2.5 verify pass (`docs/analyze-once.md` §"Verify grounding, drop what
+fails"; issue #38) before either block reaches the renderer. Every per-finding
+and per-proposal **content** field it shows — the fields in the table below —
+is a field one of those blocks already carries; the renderer transforms, it
+does not discover. Two elements describing the reviewed change are **not**
+engine fields, each labeled as such wherever it appears — so the headline
+invariant is honest, not contradicted below:
+
+1. the orchestrator-created **config-only PR link** for a proposal — not an
+   engine field but a live **orchestrator artifact** (the PR the orchestrator
+   opened at `skills/review/SKILL.md` Step 3);
+2. the **dropped-grounding count** — not an engine field either, but the Step
+   2.5 verify pass's own tally of findings that failed both tiers (see
+   [Dropped-grounding count](#dropped-grounding-count-from-the-step-25-verify-pass)
+   below).
+
+(This "content" scope excludes procedural status notes the write-up carries —
+a skipped mirror note (covered below in [Graceful
+degradation](#graceful-degradation--a-missing-mirror-never-blocks-the-headline)),
+plus the D17 `milestone-bootstrapper` nudge, a closed-duplicate note, and the
+deferred-boundary statement (each specified where the rendering skill emits
+it — `skills/review/SKILL.md` Step 1, Step 3, and Step 5, respectively).
+These describe the run's own mechanics, not the reviewed change, so they are
+outside this "content elements" scope, not additional non-engine-field content
+claims.)
 
 | Write-up element | Built from (engine `FINDINGS` field) |
 | --- | --- |
@@ -38,6 +57,10 @@ headline invariant is honest, not contradicted below.
 | how much drift | the `severity` hint (informs the redo one-liner's scope) |
 | clean-fit headline | the `FINDINGS: none` sentinel + the `SOURCES` lines |
 | the swept scope (sweep runs) | the top-level `REVIEWED` / `SOURCES.app-grep` **sweep** values → "scanned: broad" \| "scanned: pattern `<pattern>`" (`agents/coherence-reviewer.md` §"Sweep-mode") |
+
+(The dropped-grounding count is deliberately **not** in this table — it is not
+an engine `FINDINGS` field; see [Dropped-grounding count](#dropped-grounding-count-from-the-step-25-verify-pass)
+below for what it renders from instead.)
 
 The renderer adds no claim that is not backed by a field above. A finding the
 engine dropped for lack of grounding (the hard-grounding rule) never appears in
@@ -137,6 +160,34 @@ Per proposal, in order:
 proposal, exactly as `FINDINGS: none` renders no per-finding items. The renderer
 never manufactures a proposal the engine did not emit, and a proposal the engine
 dropped for lack of grounding never appears here.
+
+## Dropped-grounding count (from the Step 2.5 verify pass)
+
+Where the sections above render **from** the engine's blocks, this one renders
+from the orchestrator's own **Step 2.5 verify pass** (`docs/analyze-once.md`
+§"Verify grounding, drop what fails"; issue #38) — the mechanical check, run in
+both `skills/review/SKILL.md` and `skills/sweep/SKILL.md` immediately after
+their engine dispatch, that drops any finding whose `grounding` fails both the
+cache-only tier-1 check and the one bounded tier-2 live re-check.
+
+- **When the run's tally is greater than zero**, the write-up states it
+  verbatim, exactly once, as:
+
+  ```
+  N findings dropped: grounding did not resolve
+  ```
+
+  — `N` is the run's total drop count (summed across every sub-path on a
+  checkpointed broad `sweep`, via `accumulated.droppedCount`). This line is a
+  **caught-hallucination signal**, not a defect report — it means the verify
+  pass worked, not that something is wrong with the run.
+- **When the tally is zero** (including the `FINDINGS: none` clean-fit case,
+  which skips the verify pass entirely — `docs/analyze-once.md` §"Empty
+  state"), the write-up renders **no** drop-count line at all — never "0
+  findings dropped".
+- A dropped finding never appears anywhere else in the write-up — not as a
+  per-finding item, not in a mirror. It is counted, not described; describing a
+  dropped finding would mean citing the very grounding that failed to resolve.
 
 ## Four landing places, two tiers (not equal)
 
@@ -295,6 +346,11 @@ mirrors accrue quietly as the audit trail.
 - It **renders** from the engine's `FINDINGS` **and** `PROPOSALS` blocks via the
   analyze-once slices — it never re-greps, re-reads a doc, or re-derives a
   finding or a proposal.
+- **Dropped-grounding count**: when the Step 2.5 verify pass's tally
+  (`docs/analyze-once.md` §"Verify grounding, drop what fails") is greater than
+  zero, states "N findings dropped: grounding did not resolve" verbatim;
+  renders nothing when the tally is zero (including `FINDINGS: none`, which
+  skips the pass entirely).
 - **Proposed convention**: one item per `PROPOSALS` entry — heading · rule ·
   exemplar · diverging sites (only when `disagree: yes`) · a link to the
   config-only PR the orchestrator opened. `PROPOSALS: none` renders nothing —

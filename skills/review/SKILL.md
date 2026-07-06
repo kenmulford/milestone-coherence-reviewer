@@ -96,6 +96,22 @@ Build the review context a **single time** per review call, then dispatch the en
 
 3. **`FINDINGS: none` is a clean terminal** (`docs/analyze-once.md` §"Zero-findings — a clean terminal"; `agents/coherence-reviewer.md` l.94, l.102). Nothing to distribute, nothing to route. Skip Step 5's routing entirely and render the clean-fit write-up at Step 4 below (the independent PROPOSALS lane at Step 3 still runs — `FINDINGS: none` speaks to drift only). This is the success case, not an error — and `FINDINGS: none` with degraded `SOURCES` lines (thin grounding) is still a clean terminal.
 
+### Step 2.5 — Verify grounding, drop what fails
+
+Immediately after Step 2's single engine dispatch returns — and before Step 3
+(proposal-PR authoring), Step 4 (write-up render), or Step 5 (drift routing)
+consume `FINDINGS` — apply the two-tier verify pass specified once, in full, at
+`docs/analyze-once.md` §"Verify grounding, drop what fails" (issue #38) to
+every returned finding, tier 1 against this run's own Step 1
+`.project`/`domainSkills` cache and Step 2 diff-keyed grep cache, tier 2 (on a
+tier-1 miss) one bounded live re-check per the cited contract. A finding
+failing **both** tiers is dropped — never rendered at Step 4, never routed at
+Step 5; the run's drop count feeds Step 4's "N findings dropped: grounding did
+not resolve" line (`docs/write-up.md` §"Dropped-grounding count"). `PROPOSALS`
+is out of scope for this pass — findings only (`docs/analyze-once.md` §"Verify
+grounding, drop what fails" — Scope). `FINDINGS: none` (Step 2's clean
+terminal, above) skips this step entirely — no drop-count line is rendered.
+
 ### Step 3 — Author each convention proposal as a config-only PR (the PROPOSALS lane — separate from drift routing)
 
 The engine's `PROPOSALS` block is a **separate lane** from the drift-size routing (Step 5): a proposal is **not** a drift fix, so it does **not** go through drift-size heal routing (`docs/heal-routing.md` §"Convention proposals are a separate lane"). Where the drift router (Step 5) routes findings by `severity`, a proposal routes to a **config-only PR** — independent of the drift buckets. This step runs **before** the write-up (Step 4) by design, so each proposal's PR is already live when Step 4 renders its link — the numbered order matches the data dependency (no step renders an artifact a later step produces). `PROPOSALS: none` → skip this step entirely (nothing to author). For each proposal, the **orchestrator** (not the read-only engine) authors the entry and opens the PR:
@@ -131,7 +147,7 @@ The engine's `PROPOSALS` block is a **separate lane** from the drift-size routin
 
 ### Step 4 — Render the write-up (#5): inline PRIMARY, then the supplemental mirrors
 
-Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS` blocks (`docs/write-up.md` §"What the write-up renders from"). Never re-grep, re-read a doc, or re-derive a finding or a proposal; never add a claim no field backs.
+Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS` blocks (`docs/write-up.md` §"What the write-up renders from"), refined by the Step 2.5 verify pass above. Never re-grep, re-read a doc, or re-derive a finding or a proposal; never add a claim no field backs — the two exceptions are the config-PR link (item 2, below) and the drop-count line (item 3, below), which the write-up's own contract documents as the two labeled non-engine-field elements, neither a fabricated claim (`docs/write-up.md` §"What the write-up renders from").
 
 1. **The inline summary is the PRIMARY deliverable — always produced, never buried** (`docs/write-up.md` §"Four landing places, two tiers"; `BRIEF.md` l.67). Per finding, in order: **what it did** (`description` + `symbol`) · **why** (the `lens`) · **the citations** (the single `grounding` ref, verbatim) · **a copy-paste redo one-liner**:
 
@@ -143,9 +159,11 @@ Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS
 
 2. **Render the Proposed convention section from the `PROPOSALS` block** (`docs/write-up.md` §"Proposed convention"). Per proposal, in order: the proposed `## heading` · the one-line `rule` · the `exemplar` `path:line` · the **diverging** sites (only when `disagree: yes`) · a link to the **config-only PR** the orchestrator **already opened** for it at **Step 3** — one of three states: the **live PR link** (the happy path, or the surviving earlier PR when Step 3's post-create verify closed this run's duplicate — paired with a **note about the closed duplicate**, never a second link); or, when no valid PR resulted — either no PR was ever created (attempt + retry both failed) or a PR was created but failed the non-duplicate content-verify check — the **skipped-and-noted failure** from Step 3 item 4. A proposal carries **no** redo one-liner — its redo is *merging or closing that PR*. `PROPOSALS: none` → render **no** Proposed convention section (never a false proposal), and a proposal suppressed at Step 3 (degraded repo) is not rendered here. This section is a **separate lane** from the drift findings above — it renders the rule-authoring output, not a drift fix.
 
-3. **Clean-fit (`FINDINGS: none`) still produces a write-up — never silence** (`docs/write-up.md` §"The empty / clean-fit state"). Render a positive "**Fits cleanly — nothing changed**" headline that states **what was checked** (read from the `SOURCES` lines — which of app-grep / project-docs / domain-skills were available, so a genuine clean fit reads distinct from a thin-grounding run). No per-finding items, no redo one-liners — there is nothing to redo, and nothing is opened. (`FINDINGS: none` and `PROPOSALS: none` are independent: a clean-fit run may still carry a proposal, and a run with findings may carry none.)
+3. **State the dropped-grounding count from Step 2.5** (`docs/write-up.md` §"Dropped-grounding count") — not an engine field, the Step 2.5 verify pass's own tally. When greater than zero, the write-up states it verbatim, once, as "N findings dropped: grounding did not resolve"; when zero (including the `FINDINGS: none` case, which skips Step 2.5 entirely), no drop-count line renders at all.
 
-4. **Mirror the same content to the three supplemental audit-trail copies — each best-effort, each degrading without suppressing the inline summary** (`docs/write-up.md` §"Graceful degradation"; `BRIEF.md` l.68). Render the mirrors as copies of the *same* write-up — never its canonical home:
+4. **Clean-fit (`FINDINGS: none`) still produces a write-up — never silence** (`docs/write-up.md` §"The empty / clean-fit state"). Render a positive "**Fits cleanly — nothing changed**" headline that states **what was checked** (read from the `SOURCES` lines — which of app-grep / project-docs / domain-skills were available, so a genuine clean fit reads distinct from a thin-grounding run). No per-finding items, no redo one-liners — there is nothing to redo, and nothing is opened. (`FINDINGS: none` and `PROPOSALS: none` are independent: a clean-fit run may still carry a proposal, and a run with findings may carry none.)
+
+5. **Mirror the same content to the three supplemental audit-trail copies — each best-effort, each degrading without suppressing the inline summary** (`docs/write-up.md` §"Graceful degradation"; `BRIEF.md` l.68). Render the mirrors as copies of the *same* write-up — never its canonical home:
 
    | Mirror | How (pick the host: pwsh on Windows, bash elsewhere) | Skip-and-note when |
    |---|---|---|
@@ -203,7 +221,7 @@ Be concise — report status and outcomes flatly, no wall-of-text. Present steps
 - **Read-only engine; the orchestrator acts.** The `coherence-reviewer` engine is dispatched read-only and returns findings **and** proposals — it still acts on nothing; this skill performs the heal (and opens any config-only PR). The engine opens no issue, posts no comment, opens no PR, runs no `gh` (`agents/coherence-reviewer.md`; `BRIEF.md` l.113).
 - **Analyze once, distribute slices.** The review context is assembled once and the engine dispatched once per review call; downstream routes get minimal self-contained slices — no re-gather, re-analyze, or re-resolve (`docs/analyze-once.md`; `BRIEF.md` l.35-40, l.114).
 - **Routes on drift size alone.** Every fix routes on the engine's `severity` and nothing else — never run length, finding count, or token budget (`docs/heal-routing.md`; `BRIEF.md` l.52, l.109).
-- **Hard-grounding carries through.** Every routed issue and every write-up item carries the finding's real grounding ref (a `.project/` section, a `file:line`, or a `domainSkills` source) — never a fabricated or imagined one; the engine already dropped any ungroundable candidate (`agents/coherence-reviewer.md` §"The hard-grounding rule"; `BRIEF.md` l.111).
+- **Hard-grounding carries through.** Every routed issue and every write-up item carries the finding's real grounding ref (a `.project/` section, a `file:line`, or a `domainSkills` source) — never a fabricated or imagined one; the engine already dropped any ungroundable candidate (`agents/coherence-reviewer.md` §"The hard-grounding rule"; `BRIEF.md` l.111). Step 2.5 is a second, orchestrator-side check on top of that emit-time rule — it mechanically re-verifies each `FINDINGS` grounding and drops any that fail both tiers (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38).
 - **Degrades, never errors, on absent grounding.** Thin/absent `.project/` or absent `.milestone-config/` reduces grounding and triggers the one-time `milestone-bootstrapper` nudge — it never aborts the run (`BRIEF.md` l.89, l.96, l.119).
 - **The deferred boundary is documented, not crossed.** Standalone v1 can create a follow-up milestone via the feeder but **cannot auto-run `milestone-driver`**; the run states this boundary in the write-up and ends cleanly (`BRIEF.md` l.83, l.141; `docs/heal-routing.md` §"The deferred boundary").
 - **Authors no application code; opens no application-code PRs.** It reads the diff and the repo to ground findings; it never edits an application source file. It **may** open a **config-only PR** for a proposed `.project/conventions.md` entry (targeting `integrationBranch`, never the protected branch, human-gated — Step 3). The `gh` writes (issues, comments, the config-only PR) are performed by the skill itself, so the read-only-**engine** invariant holds — the engine returns the proposal; the orchestrator opens the PR.

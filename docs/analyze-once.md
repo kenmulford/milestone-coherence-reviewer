@@ -92,6 +92,98 @@ Step 3), targeting `integrationBranch` and human-gated, independent of the
 drift buckets (`docs/heal-routing.md` §"Convention proposals are a separate
 lane").
 
+## Verify grounding, drop what fails
+
+Before a finding is distributed as a slice (Step 3, below), rendered in the
+write-up (#5), or routed by drift size (#6), its single `grounding` ref is
+mechanically verified — a plain local check, never a re-grep or a re-dispatch
+(issue #38). This is the **one** contract both `skills/review/SKILL.md` and
+`skills/sweep/SKILL.md` implement as their own **Step 2.5 — "Verify grounding,
+drop what fails"**, positioned immediately after their Step 2 engine dispatch
+and before their Step 3/4/5 consume `FINDINGS`. It is specified once, here,
+rather than duplicated in each skill file — the same single-source-of-truth
+pattern `docs/heal-routing.md` already uses for the routing contract. This is
+new **orchestrator-side** logic only — `agents/coherence-reviewer.md` keeps
+emitting findings with its existing best-effort prompt-level care, unchanged
+(`.project/design-philosophy.md#Layering & boundaries` — the read-only-engine
+↔ orchestrator split).
+
+**Scope — `FINDINGS` only.** `PROPOSALS` entries also carry a `grounding` field
+(`agents/coherence-reviewer.md` §"Structured return block"), but this pass does
+not check them; that is a separate concern for a future issue.
+
+### Tier 1 — cache-only match (no new I/O)
+
+Check the finding's `grounding` against data this run **already resolved
+earlier** — a lookup, never a fresh read:
+
+| `grounding` kind | Resolves at tier 1 when… |
+| --- | --- |
+| `<path>:<line>` | it intersects the diff, or it appears in Step 2's already-cached bounded grep results — diff-keyed (`review`'s per-change path) or seed/broad-keyed (`sweep`'s narrowed or per-sub-path path) |
+| `.project/<doc>#<section>` | that exact section arrived as a cached `SECTION-BEGIN … SECTION-END` payload at Step 1 — not a `SKIP section` record |
+| `domainSkills:<source>` | the source string appears in Step 1's resolved `domainSkills` list |
+
+A tier-1 match passes the finding through unchanged — no tier-2 check needed.
+
+### Tier 2 — one bounded live re-check (only on a tier-1 miss)
+
+A `grounding` absent from the tier-1 cache is **not** dropped immediately: the
+engine may have grounded it in something it read live, outside the pre-dispatch
+cache (`agents/coherence-reviewer.md` l.42, l.48 — the engine keeps its own
+`Read`/grep tools to pull an *additional* cited `.project/` section, and its
+diff-keyed greps are not guaranteed identical to the orchestrator's own cached
+set). So the verify pass performs exactly **one** mechanical re-resolution per
+finding — never a retry loop, never a fresh whole-repo grep, never a
+`gh`/network call. This keeps the check O(1) per finding, not O(repo) —
+"bounded and fast" stays intact
+(`.project/design-philosophy.md#What we optimize for`):
+
+| `grounding` kind | The one-shot tier-2 re-check |
+| --- | --- |
+| `<path>:<line>` | read that exact file directly and confirm the line is in-range — one bounded read, not a re-grep |
+| `.project/<doc>#<section>` | re-resolve that one section directly, via the same primitive Step 1 already calls (`scripts/resolve-config.<sh\|ps1> docs <REPO_ROOT> -- <doc>#<heading>`) — one section read, not the whole doc |
+| `domainSkills:<source>` | re-check the source string against the resolved `domainSkills` list — the same list tier 1 already checked. No live `domainSkills`-resolution path exists anywhere in the engine (`agents/coherence-reviewer.md` §"What you receive") — so this re-check is definitionally a no-op. It still runs, for contract symmetry across the three grounding kinds; no fixture where it does anything other than reconfirm tier 1 is constructible, and none is expected |
+
+A tier-2 pass renders and routes the finding exactly as a tier-1 pass would —
+no drop-count contribution from that finding.
+
+### Drop — only when both tiers fail
+
+A finding whose `grounding` fails **both** tiers is **dropped**: never
+distributed as a slice, never rendered in the write-up, never routed. This is a
+mechanical drop, not a merge-blocking verdict — coherence heals, it does not
+gate (`.project/design-philosophy.md#Error & failure philosophy`). The pass
+tallies the run's drop count (per sub-path on a checkpointed broad sweep — see
+below); the write-up (#5) states it verbatim as **"N findings dropped:
+grounding did not resolve"** when the count is greater than zero, and renders
+nothing when it is zero.
+
+### Empty state
+
+`FINDINGS: none` (the engine's clean-fit sentinel) skips this pass entirely —
+nothing to verify, so no drop-count line is rendered, matching the existing
+clean-fit behavior unchanged (`agents/coherence-reviewer.md` §"Structured
+return block" — the `FINDINGS: none` clean-fit bullet; see also
+[Zero-findings — a clean terminal](#zero-findings--a-clean-terminal)).
+
+### Broad `sweep` verifies per sub-path, not once at the end
+
+`review` and a **narrowed** `sweep` each dispatch the engine exactly once, so
+this pass also runs exactly once, right after that single dispatch. A
+**broad** `sweep` dispatches once **per top-level sub-path** and persists a
+checkpoint after each sub-path completes (`skills/sweep/SKILL.md` §"Broad
+sweep — per-sub-path dispatch, checkpointed"). That checkpoint persists only
+`accumulated.findings` / `accumulated.proposals` — never the per-sub-path grep
+cache — so a later-resumed invocation has no tier-1 cache left to check an
+earlier sub-path's findings against. This pass therefore runs **nested inside**
+the per-sub-path dispatch loop: verify that sub-path's just-returned findings
+immediately, against that sub-path's own just-produced grep cache, **before**
+appending the survivors to `accumulated.findings` / `accumulated.proposals`,
+marking the sub-path `done`, or persisting the checkpoint. A finding dropped
+this way is never appended to `accumulated.findings` in the first place, and
+its drop is tallied into the checkpoint's running `accumulated.droppedCount`
+(`skills/sweep/SKILL.md` §"Checkpoint schema") so the count survives a resume.
+
 ## Step 3 — Distribute minimal, self-contained slices
 
 From that single analysis the orchestrator derives one slice per downstream
@@ -290,6 +382,12 @@ slice to the route's fixed shape, validated against the
   drift-routed; each proposal goes to a config-only PR (`skills/review/SKILL.md`
   Step 3) targeting `integrationBranch`, human-gated (`docs/heal-routing.md`
   §"Convention proposals are a separate lane").
+- **Verify grounding, drop what fails** — before any slice/render/route, each
+  finding's `grounding` is checked tier 1 (cache-only, against this run's own
+  Step 1/Step 2 cache) then, on a miss, tier 2 (one bounded live re-check). A
+  finding failing both tiers is dropped and tallied; the write-up states the
+  tally when nonzero. A broad `sweep` runs this nested per sub-path, not once
+  at the end (§"Verify grounding, drop what fails").
 - An **under-specified slice** (one that would force the consumer to re-read,
   re-grep, or re-derive) is an **orchestration error**, not shipped.
 - **`FINDINGS: none`** → nothing to distribute → no slices, no dispatch → a valid
