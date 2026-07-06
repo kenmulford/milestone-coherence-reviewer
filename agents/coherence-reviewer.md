@@ -1,27 +1,13 @@
 ---
 name: coherence-reviewer
 description: |
-  Dispatched after a change is built to assess whether it fits how the app is already built — checking the built diff against three sources (the app itself via bounded diff-keyed greps, the resolved `.project/` doc sections, and the stack's best practices via `domainSkills`) and returning hard-grounded findings. Read-only; never heals, writes no files, never edits the repo (never writes the `conventions.md` entry, never opens the config PR — the orchestrator does that). Returns a structured FINDINGS block plus a parallel PROPOSALS block the orchestrator/skill acts on. Also runs in sweep-mode (dispatched by `skills/sweep/SKILL.md`) — an app-wide, on-demand scan that classifies standing inconsistency clusters into the same PROPOSALS + FINDINGS blocks, still read-only and still hard-grounded. Every finding cites exactly one of a `.project/` section, a repo `file:line`, or a `domainSkills` source; a finding that cannot be grounded is dropped, never emitted as a vibe. Stack-agnostic; the profile and brief carry the stack. Examples:
+  Dispatched after a change is built to assess whether it fits how the app is already built — checking the diff against three sources (bounded diff-keyed greps, resolved `.project/` sections, the stack's `domainSkills`) and returning hard-grounded findings. Read-only: returns findings, never heals or edits the repo. Also runs in sweep-mode (`skills/sweep/SKILL.md`), an app-wide inconsistency scan. Examples:
 
   <example>
-  Context: A change introduced a new ContactsExportService that opens its own DB connection and formats CSV by hand. A bounded grep for the sibling pattern finds ContactsImportService injecting a shared connection, and `.project/conventions.md#Service layer` records "services receive the unit-of-work via constructor injection".
-  user: "Review the built change on this branch for coherence against the three sources."
-  assistant: "Dispatching coherence-reviewer to check the diff against the app's sibling services, the resolved `.project/` sections, and the stack's `domainSkills` — returning grounded findings."
-  <commentary>The finding is hard-grounded twice over: a `file:line` to ContactsImportService and a `.project/` section. The engine emits one grounding ref per finding and answers the "built differently from siblings / ignored convention" lenses. It surfaces the drift; it does not fix it.</commentary>
-  </example>
-
-  <example>
-  Context: A change hand-rolls a date-difference calculation across timezones. `domainSkills` points at the framework's date/time guidance, which documents a built-in helper for exactly this. No `.project/` section and no sibling file covers it.
-  user: "Review the built change for coherence."
-  assistant: "Dispatching coherence-reviewer to check the diff against the three sources."
-  <commentary>The "hand-rolled what a library does" lens fires, grounded in the `domainSkills` source. One source is enough — the hard-grounding rule requires exactly one valid grounding ref, not all three.</commentary>
-  </example>
-
-  <example>
-  Context: A change touches only files outside `sourceGlobs` (a README edit) and `.project/` is absent. There is nothing to grep the app against and no doc grounding.
+  Context: A change touches only files outside `sourceGlobs` and `.project/` is absent — nothing to grep against, no doc grounding.
   user: "Review the built change for coherence."
   assistant: "Dispatching coherence-reviewer to check the diff against whatever sources are available."
-  <commentary>A diff touching no `sourceGlobs` paths gives the engine nothing to check the app against; thin/absent `.project/` degrades to bounded greps. The result is an empty FINDINGS list — a valid clean-fit outcome, not an error or a crash.</commentary>
+  <commentary>No `sourceGlobs` path touched leaves nothing to check the app against; thin/absent `.project/` degrades to bounded greps. An empty FINDINGS list is a valid clean-fit outcome, not an error or a crash.</commentary>
   </example>
 model: sonnet
 color: green
