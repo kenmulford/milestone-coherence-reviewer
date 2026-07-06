@@ -2,6 +2,17 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
+## v0.2.1 — audit remediation: mechanical grounding-verify, dogfood, truth-ups
+
+Patch release — the audit-remediation milestone (12 issues, all merged CI-green).
+
+- **Mechanical grounding-verify pass** between engine dispatch and write-up render, with bounded live re-check for groundings resolved outside the pre-dispatch cache — the audit's flagship fix (#38)
+- Full-strength dogfood run against a disposable scratch fixture: the domainSkills grounding path validated end-to-end, recorded in `docs/validation-note.md` (#47)
+- `docs/heal-routing.md` is the sole authority for the route table + reconciliation (#43); sweep's no-milestone fallback routes to review (#42)
+- Act-verify-retry on the PR write path (#44); resumable broad sweep (#45); first-run failure guidance (#46); broadened sourceGlobs (#39); stale version citation fixed (#41)
+- CI scaffold + version-citation check (#48); per-file size-budget check (#49)
+- Precision truth-sweep: shipped human-gated feeder→driver handoff distinguished from the still-deferred unattended cycle; dead driver#232 refs corrected to feeder#148 (#40)
+
 ## v0.2.0 — Coherence beyond per-change drift
 
 **Theme:** Coherence beyond per-change drift — an opt-in app-wide consistency scan and config rule-authoring, closing the loop back into `.project/`.
