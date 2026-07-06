@@ -35,3 +35,20 @@ jobs:
         uses: actions/checkout@v7
       - name: Compare .project/*.md version citations against plugin.json
         run: ./scripts/check-version-citation.sh
+
+  # Guards agents/coherence-reviewer.md's frontmatter `description` field and
+  # the two SKILL.md files against silently regrowing past the trims issue
+  # #43 makes (issue #49). Reuses this same workflow's existing `on:` trigger
+  # (already covers `develop`) rather than a second new workflow file — see
+  # scripts/check-size-budgets.sh for the per-file ceilings and the ratchet
+  # discipline governing them.
+  size-budgets:
+    name: size-budgets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code under review
+        uses: actions/checkout@v7
+      - name: Run the size-budgets checker's own golden-case tests
+        run: ./scripts/check-size-budgets.test.sh
+      - name: Check size budgets (agent description + SKILL.md ceilings)
+        run: ./scripts/check-size-budgets.sh
