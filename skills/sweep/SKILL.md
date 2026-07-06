@@ -45,7 +45,7 @@ Build the sweep context, then dispatch the engine **in sweep-mode** (`docs/analy
 
 #### Narrowed sweep — one dispatch, unchanged
 
-Assemble the four context parts once, scoped to the `<pattern>`, and dispatch the engine once — byte-for-byte the prior behavior:
+Assemble the four context parts once, scoped to the `<pattern>`, and dispatch the engine once — byte-for-byte the prior behavior (Step 2.5, below, adds a new pass immediately after this dispatch; the dispatch itself — context assembly + the single engine call — is what stays unchanged):
 
 | Part | Source |
 |---|---|
@@ -64,6 +64,7 @@ Assemble the four context parts once, scoped to the `<pattern>`, and dispatch th
    |---|---|
    | **File absent** (first run) | Seed a **fresh** worklist: one entry per top-level directory derived from Step 1's **currently-resolved** `sourceGlobs` KEY records (never a hardcoded list) — the directory prefix of each glob (`skills/**` → `skills/`, `agents/**` → `agents/`, …). Every entry starts `"done": false`; `accumulated.findings` / `accumulated.proposals` start `[]`. |
    | **File present but fails to parse** (`jq -e .` / `ConvertFrom-Json` errors) | **Malformed → stale.** Discard the file entirely and seed fresh, exactly as the absent case. Never crash, never hard-fail (`.project/design-philosophy.md#Error & failure philosophy` — fail-soft / absence-means-skip). |
+   | **File present, parses, but `accumulated` lacks the `droppedCount` key** (a checkpoint written before issue #38 added it) | **Schema-stale → discard.** Treat exactly like the malformed case — discard the file entirely and seed fresh, never backfill a bare `0` into an old checkpoint. This also guarantees every finding in the resumed run passes through the Step 2.5 verify pass: an old checkpoint could otherwise carry findings appended before that pass existed, and resuming it "as-is" would ship them unverified and would crash the first `droppedCount` increment against a missing key. Never crash. |
    | **File present, parses, but any `worklist[].subPath` is NOT among the current `sourceGlobs`-derived top-level dirs** | **Stale → discard.** A referenced sub-path that no longer exists (a dir removed/renamed in `sourceGlobs`) means the checkpoint no longer matches reality — discard it entirely and seed fresh. Never crash. |
    | **File present, parses, every `worklist[].subPath` still valid, but the current `sourceGlobs`-derived dirs include one or more NOT in the worklist** (`sourceGlobs` **grew** since the checkpoint was written — e.g. a sibling issue broadened it mid-run) | **Merge, not reseed.** Append the newly-added sub-path(s) with `"done": false`. Keep every existing `done: true` mark and everything already in `accumulated` untouched — never discard, never re-scan a sub-path already marked done. |
    | **File present, parses, every `subPath` still valid, some done, some not** (the ordinary interrupted-then-resumed case) | **Resume as-is** — no worklist edit needed. |
@@ -71,13 +72,14 @@ Assemble the four context parts once, scoped to the `<pattern>`, and dispatch th
 3. **Dispatch once per not-yet-done sub-path, in worklist order.** For each `worklist[]` entry with `done: false`:
    - Assemble that sub-path's context — the same four-part shape as the narrowed path above, with the sweep seed narrowed to that one sub-path — gathered **once** for that sub-path (`docs/analyze-once.md` Step 1).
    - Dispatch the read-only engine **once**, in sweep-mode, against that context (`agents/coherence-reviewer.md` §"Sweep-mode") — the identical engine contract, just a narrower per-call scope. No change to the engine itself.
-   - Append the returned `FINDINGS` and `PROPOSALS` entries to `accumulated.findings` / `accumulated.proposals`.
+   - **Verify grounding, drop what fails — nested here, not deferred** (Step 2.5, below; `docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38). Because the checkpoint persists only `accumulated.findings` / `accumulated.proposals` — never a per-sub-path grep cache — a later-resumed invocation would have no tier-1 cache to check an earlier sub-path's findings against. So apply the two-tier verify pass to this sub-path's just-returned `FINDINGS` **now**: tier 1 against this sub-path's own just-produced grep cache (plus Step 1's `.project`/`domainSkills` cache), tier 2 a bounded live re-check on a tier-1 miss — **before** anything from this dispatch is appended, marked done, or persisted. A finding failing both tiers is dropped here and is never appended to `accumulated.findings`; tally it into `accumulated.droppedCount`.
+   - Append the survivors — the post-verify `FINDINGS` and the `PROPOSALS` entries — to `accumulated.findings` / `accumulated.proposals`.
    - Mark that entry `"done": true`.
    - **Persist immediately** — write the updated checkpoint (worklist + accumulated + `updatedAt`) back to disk **before** moving to the next sub-path. This is the durability point: an interruption after this write loses at most the *next* sub-path's work, never a completed one.
 
 4. **Full completion — clear the checkpoint.** Once every `worklist[]` entry is `done: true` and Step 6 is reached, delete `.milestone-config/.runtime/sweep-progress.json` (best-effort — a delete failure is reported, never fatal). A finished run leaves no stale "all done" state behind to confuse the next invocation; the next broad sweep with no checkpoint present seeds fresh, exactly like a genuine first run.
 
-5. **What Steps 3-6 consume.** By the time dispatching ends — whether in one pass or resumed across several invocations — `accumulated.findings` / `accumulated.proposals` **is** the run's `FINDINGS` / `PROPOSALS` block: the same shape Steps 3-6 below already consume from a single dispatch. They do not need to know whether it came from one engine call or several. The top-level `REVIEWED: sweep:broad` / `SOURCES.app-grep: swept-broad` values Step 4 renders describe the overall run **mode** (broad vs. narrowed), unaffected by whether the broad dispatch loop took one call or several. A broad sweep with this checkpoint is a **sequence of per-sub-path analyze-once cycles**, each individually honoring "once per review call" (`docs/analyze-once.md`) — it does not alter the per-change `review` path at all.
+5. **What Steps 3-6 consume.** By the time dispatching ends — whether in one pass or resumed across several invocations — `accumulated.findings` / `accumulated.proposals` **is** the run's `FINDINGS` / `PROPOSALS` block: the same shape Steps 3-6 below already consume from a single dispatch. They do not need to know whether it came from one engine call or several. The top-level `REVIEWED: sweep:broad` / `SOURCES.app-grep: swept-broad` values Step 4 renders describe the overall run **mode** (broad vs. narrowed), unaffected by whether the broad dispatch loop took one call or several. A broad sweep with this checkpoint is a **sequence of per-sub-path analyze-once cycles**, each individually honoring "once per review call" (`docs/analyze-once.md`) — it does not alter the per-change `review` path at all. `accumulated.droppedCount` (see "Checkpoint schema" below) rides the same accumulation and feeds Step 4 identically.
 
 #### Checkpoint schema
 
@@ -91,15 +93,16 @@ Assemble the four context parts once, scoped to the `<pattern>`, and dispatch th
   ],
   "accumulated": {
     "findings": [],
-    "proposals": []
+    "proposals": [],
+    "droppedCount": 0
   },
   "updatedAt": "2026-07-05T20:14:03Z"
 }
 ```
 
-Read and write it with the suite's already-approved JSON tooling — `jq` (bash) / `ConvertFrom-Json` + `ConvertTo-Json` (pwsh) — no new dependency, no new script (`.project/library-manifest.md#Approved libraries (by purpose)`). Reading/writing one small JSON scratch file is exactly the kind of mechanical, non-judgment operation the suite already does inline with `jq` (e.g. `resolve-config.sh`'s own `jq -e .` validation) rather than wrapping in a dedicated script; the sibling git-invisible-scratch-file convention is `scripts/memory-mirror.sh:134-138`, applied here to a resumability checkpoint instead of a memory mirror.
+Read and write it with the suite's already-approved JSON tooling — `jq` (bash) / `ConvertFrom-Json` + `ConvertTo-Json` (pwsh) — no new dependency, no new script (`.project/library-manifest.md#Approved libraries (by purpose)`). Reading/writing one small JSON scratch file is exactly the kind of mechanical, non-judgment operation the suite already does inline with `jq` (e.g. `resolve-config.sh`'s own `jq -e .` validation) rather than wrapping in a dedicated script; the sibling git-invisible-scratch-file convention is `scripts/memory-mirror.sh:134-138`, applied here to a resumability checkpoint instead of a memory mirror. `accumulated.droppedCount` is the running tally of findings the Step 2.5 verify pass dropped, incremented per sub-path (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38). It survives a resume exactly like `findings`/`proposals` do **provided the checkpoint already carries the key** — a checkpoint written before this field existed is schema-stale and discarded rather than backfilled (the decision table above), so `droppedCount` is never missing on a checkpoint this pass actually resumes.
 
-`PROPOSALS: none` **and** `FINDINGS: none` (i.e. `accumulated.findings`/`accumulated.proposals` both empty once the loop above completes) is the clean, valid "nothing inconsistent" outcome (Step 4's empty state; that section's "what was checked" line reads Step 1's project-docs/domain-skills counts — resolved once, shared across every sub-path dispatch — plus the constant `swept-broad` app-grep descriptor from bullet 5 above, never a per-sub-path `SOURCES` set).
+`PROPOSALS: none` **and** `FINDINGS: none` (i.e. `accumulated.findings`/`accumulated.proposals` both empty once the loop above completes) is the clean, valid "nothing inconsistent" outcome (Step 4's empty state; that section's "what was checked" line reads Step 1's project-docs/domain-skills counts — resolved once, shared across every sub-path dispatch — plus the constant `swept-broad` app-grep descriptor from bullet 5 above, never a per-sub-path `SOURCES` set). A nonzero `accumulated.droppedCount` does not change this empty-state classification — the sweep still found no *surviving* inconsistency — but Step 4 still renders the drop-count line per `docs/write-up.md` §"Dropped-grounding count"; only a `droppedCount` of exactly zero renders no drop-count line at all.
 
 #### Known trade-off — clustering narrows to the sub-path
 
@@ -108,6 +111,31 @@ Each per-sub-path dispatch clusters only **within that sub-path's own grep resul
 #### No concurrency-collision guard — low blast radius, not an oversight
 
 Two overlapping broad sweeps racing to write the same checkpoint is out of scope for this issue, deliberately: this is a **local, per-clone scratch file** (git-invisible, single developer's own working copy), not a shared or multi-writer store. The worst case of a race is a lost update to one sub-path's `done` mark, causing at most a **redundant re-dispatch** of that one sub-path on the next invocation — already covered by the malformed/stale-checkpoint fallback above (discard-and-reseed, or at worst one duplicate dispatch; never data loss, never a crash). A lock file or other mutual-exclusion guard would defend against a scenario whose downside is already bounded and self-healing, so it is not added here (least-code).
+
+### Step 2.5 — Verify grounding, drop what fails
+
+Apply the two-tier verify pass specified once, in full, at
+`docs/analyze-once.md` §"Verify grounding, drop what fails" (issue #38) to
+every returned finding, before Step 3 (proposal-PR authoring), Step 4
+(write-up render), or Step 5 (drift routing) consume `FINDINGS`. `PROPOSALS` is
+out of scope for this pass — findings only. `FINDINGS: none` skips it
+entirely — no drop-count line.
+
+- **Narrowed sweep** (a `<pattern>` given) — one engine dispatch, so this step
+  runs **once**, immediately after that single Step 2 dispatch returns, exactly
+  like `review`'s Step 2.5: tier 1 checks each finding's `grounding` against
+  Step 1's `.project`/`domainSkills` cache and Step 2's pattern-keyed grep
+  cache; a tier-1 miss gets one bounded tier-2 re-check before being dropped.
+- **Broad sweep** (no `$ARGUMENTS`) — this step does **not** wait for the whole
+  Step 2 loop to finish. It is already applied **nested inside** Step 2's
+  per-sub-path dispatch loop (see Step 2 item 3, "Verify grounding, drop what
+  fails — nested here, not deferred") — immediately after each sub-path's
+  dispatch and before that sub-path's survivors are appended to `accumulated`,
+  marked `done`, or persisted, because the checkpoint carries no per-sub-path
+  grep cache for a later-resumed invocation to check against. By the time the
+  whole broad loop completes, every finding in `accumulated.findings` has
+  already cleared this pass; the running tally is `accumulated.droppedCount`
+  (see "Checkpoint schema" above).
 
 ### Step 3 — Author each convention proposal as a config-only PR (the PROPOSALS lane)
 
@@ -121,10 +149,11 @@ The **ONLY** sweep delta: in sweep-mode these proposals carry `source: sweep` (w
 
 ### Step 4 — Render the write-up (#5): the cluster report
 
-Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS` blocks, **reusing `docs/write-up.md`** — never re-grep, re-read a doc, or re-derive a cluster. The sweep's "cluster report" **is** the existing renderer's two sections, framed as clusters under a sweep headline:
+Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS` blocks, refined by the Step 2.5 verify pass above, **reusing `docs/write-up.md`** — never re-grep, re-read a doc, or re-derive a cluster. The sweep's "cluster report" **is** the existing renderer's sections, framed as clusters under a sweep headline:
 
 1. **Proposed conventions** (from `PROPOSALS`, `docs/write-up.md` §"Proposed convention") — one item per agree/disagree cluster: the `## heading` · the one-line `rule` · the `exemplar` `path:line` · the `diverging` sites (**only** when `disagree: yes`) · the **live config-only PR link** opened at Step 3 (or the skipped-and-noted failure from Step 3). A proposal carries **no** redo one-liner — its redo is merging or closing that PR.
 2. **Undocumented-deviation drift** (from `FINDINGS`, `docs/write-up.md` per-finding shape) — one tight item per governed-deviate-undocumented cluster: what deviates + `symbol` · why (the `ignored-convention` lens) · the single `grounding` ref verbatim (the governing `.project/conventions.md#<section>` + the deviating `file:line`) · a copy-paste `gh issue create --repo … --title … --body …` redo one-liner.
+3. **Dropped-grounding count** (from the Step 2.5 verify pass, not an engine field — `docs/write-up.md` §"Dropped-grounding count") — when the run's tally (`accumulated.droppedCount` on a broad sweep) is greater than zero, states "N findings dropped: grounding did not resolve" verbatim; renders nothing when it is zero.
 
 Then **mirror** the same write-up to the three supplemental audit-trail copies, each best-effort, exactly as `review` Step 4 (`docs/write-up.md` §"Graceful degradation"): memory via `scripts/memory-mirror.{sh,ps1}` (detect-or-fallback); the issue/PR comments **only when a resolvable issue/PR context exists** — for an ad-hoc broad sweep there is often none, so those mirrors are **skipped-and-noted**, never forced. The inline write-up is the PRIMARY deliverable and is always produced.
 
@@ -149,7 +178,7 @@ No clusters found, or every cluster **governed + conforming** (or a defensible d
 - **Read-only engine, orchestrator acts.** The engine returns `FINDINGS` **and** `PROPOSALS` in sweep-mode and acts on nothing; this skill performs the heal and opens any config-only PR (`agents/coherence-reviewer.md` §"Sweep-mode", §"Read-only").
 - **Opens no application-code PR.** It may open a **config-only PR** for a proposed `.project/conventions.md` entry (a `chore/propose-<slug>` branch off `integrationBranch`) and follow-up issues for drift — it edits **no** application code and creates **no** application-code branch.
 - **Never blocks, gates, or touches a merge or the protected branch.** The sweep is on-demand and post-hoc; it has no merge to gate and never writes to or force-pushes the protected branch (`BRIEF.md` l.50, l.126).
-- **Hard-grounding carries through.** Every cluster site — every proposal `site` / `exemplar` / `diverging` and every drift `grounding` — cites a real `file:line` (or `.project/` section / `domainSkills` source); the engine dropped any ungroundable cluster (`agents/coherence-reviewer.md` §"The hard-grounding rule").
+- **Hard-grounding carries through.** Every cluster site — every proposal `site` / `exemplar` / `diverging` and every drift `grounding` — cites a real `file:line` (or `.project/` section / `domainSkills` source); the engine dropped any ungroundable cluster (`agents/coherence-reviewer.md` §"The hard-grounding rule"). Step 2.5 is a second, orchestrator-side check on top of that emit-time rule — it mechanically re-verifies each `FINDINGS` grounding and drops any that fail both tiers (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38).
 - **Bounded, on demand.** The broad scan greps **within `sourceGlobs`** and runs **only on demand** — never on a per-change run, never a per-change substitute (`agents/coherence-reviewer.md` §"Sweep-mode"; the per-change path stays diff-keyed).
 - **Analyze once (per sub-path), distribute slices.** Step 1's config + `.project/` resolution is gathered once per skill invocation. The engine dispatch is once **per not-yet-done sub-path** on the broad path (once, total, on the narrowed path) — each individual dispatch still honors "once per review call" (`docs/analyze-once.md`); downstream routes get their minimal self-contained slice from the accumulated result — never a re-gather, re-analyze, or re-resolve.
 - **Broad sweep is resumable; narrowed sweep is untouched.** A broad sweep seeds/resumes a per-sub-path worklist checkpoint (`.milestone-config/.runtime/sweep-progress.json` — git-invisible, no new dependency, no new script); an interruption picks up at the next not-yet-done sub-path instead of re-scanning from zero, and a malformed/stale checkpoint discards and re-seeds rather than crashing. A narrowed (`<pattern>`) sweep keeps its original one-shot dispatch — the checkpoint file is never read or written on that path.
