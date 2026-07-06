@@ -130,20 +130,9 @@ Then **mirror** the same write-up to the three supplemental audit-trail copies, 
 
 ### Step 5 — Route drift findings by drift size (enact #6, standalone mode)
 
-Route **only** the `FINDINGS` drift (the governed-deviate-undocumented clusters) by each finding's `severity` and nothing else, **reusing `docs/heal-routing.md`** exactly as `review` Step 5 does in **standalone mode** (no driver build loop):
+Route **only** the `FINDINGS` drift (the governed-deviate-undocumented clusters) by each finding's `severity` and nothing else, reusing `docs/heal-routing.md` **exactly as `skills/review/SKILL.md` Step 5 does** — a genuine reference to that doc's machinery, not a re-implementation. The route table (every `severity` value's destination) and the milestone-attachment reconciliation (a milestone-active sweep attaches the new issue to it; no active milestone opens a backlog issue instead, never inventing a "current" one) live there alone — `docs/heal-routing.md` §"The route table (mutually exclusive, total over the severity enum)" and §"Milestone attachment reconciliation (not a hard-coded assumption)". This skill carries no copy of either.
 
-| `severity` | Route (standalone) |
-|---|---|
-| `drift-trivial` | **degrades to a new issue** — no build loop to re-dispatch the implementer |
-| `drift-small` / `drift-medium` | **a new issue** carrying the finding + its `grounding` |
-| `drift-large` | **a brief to `milestone-feeder`** — the large-drift slice (a tight adjustments brief with citations, never a raw dump); the feeder plans + creates the follow-up milestone with its own triage gate |
-
-**Reconcile the "current milestone" assumption — an ad-hoc sweep may have none.** `review` Step 5 opens the `drift-small` / `drift-medium` (and standalone-degraded `drift-trivial`) issue **on the current milestone** (`docs/heal-routing.md` §"`drift-small` / `drift-medium`"). A sweep, however, is on-demand and may run with **no active milestone** — do not silently imply a "current milestone" always exists. Reconcile it explicitly:
-
-- **A milestone IS contextually active** (the sweep was invoked inside a milestone run) → attach the new issue to it, exactly as `review` does.
-- **No current-milestone context** (an ad-hoc sweep) → open the new issue **without a milestone** — a **backlog issue** carrying the finding + its `grounding`. Never invent or assume a "current" milestone.
-
-The `severity`-keyed routing is otherwise **identical to `review`** — only the milestone attachment is conditional on context.
+The `severity`-keyed routing is otherwise **identical to `review`** — only the milestone attachment is conditional on context, exactly as that reconciliation states.
 
 State the **deferred boundary** in the write-up: standalone cannot auto-run `milestone-driver`; a human runs it on any follow-up milestone (`docs/heal-routing.md` §"The deferred boundary"). **`PROPOSALS` are NOT routed here** — they are the separate config-PR lane (Step 3; `docs/heal-routing.md` §"Convention proposals are a separate lane"). `FINDINGS: none` → route nothing.
 

@@ -52,9 +52,9 @@ from `agents/coherence-reviewer.md` l.98) and **mutually exclusive** (each
 | `severity` | Route | Destination | Slice it receives (#4) |
 | --- | --- | --- | --- |
 | `drift-trivial` | **inline fix** *(embedded)* — re-dispatch the implementer to fix it before the PR merges | the implementer, mid-run | the [inline-fix slice](analyze-once.md#the-inline-fix-slice-to-the-implementer-re-dispatch): `{ finding + citation + file scope }` |
-| `drift-trivial` | **degrades to a small issue** *(standalone)* — no build loop to re-dispatch into | a new issue on the **current** milestone | — (issue carries the finding + its grounding) |
-| `drift-small` | **new issue** | a new issue on the **current** milestone | — (issue carries the finding + its grounding) |
-| `drift-medium` | **new issue** | a new issue on the **current** milestone | — (issue carries the finding + its grounding) |
+| `drift-trivial` | **degrades to a small issue** *(standalone)* — no build loop to re-dispatch into | a new issue — milestone-attached or backlog (see [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption) below) | — (issue carries the finding + its grounding) |
+| `drift-small` | **new issue** | a new issue — milestone-attached or backlog (see [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption) below) | — (issue carries the finding + its grounding) |
+| `drift-medium` | **new issue** | a new issue — milestone-attached or backlog (see [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption) below) | — (issue carries the finding + its grounding) |
 | `drift-large` | **feeder handoff** — `milestone-feeder` plans + creates the follow-up milestone (its own triage gate) | `milestone-feeder` as a brief | the [large-drift slice](analyze-once.md#the-large-drift-slice-handoff-to-milestone-feeder): a tight adjustments brief |
 
 `drift-trivial` is the only value whose route depends on the run **mode** —
@@ -75,22 +75,50 @@ and `large` route identically in either mode.
   the whole analysis (`analyze-once.md`; `BRIEF.md` l.37).
 - **Standalone mode (no driver build loop).** There is **no build loop to
   re-dispatch the implementer into**, so the inline route is unavailable. A
-  trivial finding **degrades to a small issue** on the current milestone — the
-  same destination as `drift-small`, opened so the fix is captured rather than
-  applied in place (`BRIEF.md` l.78). This degrade is the *only* difference
-  between the two modes; it is not a re-classification of drift size (the finding
-  is still trivial), only a different destination for the trivial route when the
-  inline mechanism is absent.
+  trivial finding **degrades to a small issue** — the same destination as
+  `drift-small` (milestone-attached or backlog, per the
+  [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption)
+  below), opened so the fix is captured rather than applied in place
+  (`BRIEF.md` l.78). This degrade is the *only* difference between the two
+  modes; it is not a re-classification of drift size (the finding is still
+  trivial), only a different destination for the trivial route when the inline
+  mechanism is absent.
 
-### `drift-small` / `drift-medium` → a new issue on the current milestone
+### `drift-small` / `drift-medium` → a new issue
 
-Both route to **a new issue opened on the current milestone** — captured and
-built later in the same run (`BRIEF.md` l.47). They share a destination because
-the route key is drift size and both are in-milestone-sized: self-contained
-enough to be one (small) or a few (medium) issues alongside the active work, not
-large enough to warrant a follow-up milestone. A small/medium fix built on the
-current milestone is **not re-coherence-reviewed** — see
-[Recursion and termination](#recursion-and-termination--milestone-granularity-not-a-counter).
+Both route to **a new issue** — captured and built later in the same run
+(`BRIEF.md` l.47), milestone-attached or backlog per the
+[reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption)
+below. They share a destination because the route key is drift size and both
+are in-milestone-sized: self-contained enough to be one (small) or a few
+(medium) issues alongside the active work, not large enough to warrant a
+follow-up milestone. A fix landed on an active milestone is **not**
+re-coherence-reviewed when it is later built — see
+[Recursion and termination](#recursion-and-termination--milestone-granularity-not-a-counter);
+a backlog issue carries no milestone loop to re-enter in the first place.
+
+### Milestone attachment reconciliation (not a hard-coded assumption)
+
+None of the new-issue routes above — `drift-small`, `drift-medium`, and the
+standalone-degraded `drift-trivial` — hard-code **where** that issue attaches.
+Every caller of this routing contract (the driver's embedded review loop, and
+either standalone entry point, `skills/review/SKILL.md` or
+`skills/sweep/SKILL.md`) may run with **no milestone contextually active** — an
+ad-hoc branch/PR review, or a sweep invoked outside any milestone build loop —
+so "the current milestone" is never assumed to exist. Reconcile it explicitly,
+the same way for every caller:
+
+- **A milestone IS contextually active** (the run sits inside a milestone build
+  loop) → attach the new issue to it.
+- **No milestone context is active — or milestone context cannot be reliably
+  determined** (an ambiguous or broken lookup degrades to this same branch
+  rather than erroring or crashing, per the fail-soft / absence-means-skip
+  philosophy — `.project/design-philosophy.md#Error & failure philosophy`) →
+  open the new issue **without** a milestone — a **backlog issue** carrying the
+  finding + its `grounding`. Never invent or assume a "current" milestone.
+
+This is the **single copy** of the reconciliation logic — `review` Step 5 and
+`sweep` Step 5 both point here instead of each carrying their own copy of it.
 
 ### `drift-large` → a brief to `milestone-feeder`
 
@@ -155,15 +183,18 @@ The router introduces **no re-review counter and no hard cap**. It cannot loop
 forever, and the reason is structural — tied to milestone granularity, not to a
 tally (`BRIEF.md` §"The recursion rule" l.54-61; §"Recorded decisions" l.110).
 
-### Same-milestone fixes are not re-reviewed
+### Same-milestone (or backlog) fixes are not re-reviewed
 
-A fix routed onto the **current** milestone — `drift-small`, `drift-medium`, and
-the **standalone-degraded** `drift-trivial` (which also lands as a
-current-milestone issue) — is **not** re-coherence-reviewed when it is later
-built. Re-review is gated at **new-milestone granularity**, so an in-milestone
-fix does not re-enter coherence (`BRIEF.md` l.56-58, l.110). The router records
-no re-review trigger for these; by routing them in-milestone it places them, by
-construction, in the not-re-reviewed bucket.
+A fix routed by `drift-small`, `drift-medium`, or the **standalone-degraded**
+`drift-trivial` — attached to an active milestone, or opened as a backlog issue
+when none is active, per the
+[milestone-attachment reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption)
+above — is **not** re-coherence-reviewed when it is later built. Re-review is
+gated at **new-milestone granularity**, so an in-milestone fix does not
+re-enter coherence (`BRIEF.md` l.56-58, l.110); a backlog issue carries no
+milestone loop to re-enter in the first place. The router records no re-review
+trigger for either — by routing them in-milestone or to the backlog it places
+them, by construction, in the not-re-reviewed bucket.
 
 ### A follow-up milestone IS re-reviewed — by construction only
 
@@ -188,7 +219,7 @@ needed (`BRIEF.md` l.61, l.110).
 
 | Where re-review happens | Trigger |
 | --- | --- |
-| Same-milestone fix (small/medium, standalone-degraded trivial) | **never re-reviewed** — gated out at milestone granularity |
+| Same-milestone fix or backlog issue (small/medium, standalone-degraded trivial) | **never re-reviewed** — gated out at milestone granularity, or no milestone loop exists to re-enter |
 | Follow-up milestone (large) | re-reviewed **by construction** — re-enters `feeder → driver`, which includes coherence; the router adds no explicit trigger |
 
 ## Run length is not a routing signal
@@ -289,10 +320,17 @@ keep judgment in the orchestrator.
   else**. Run length, finding count, token budget, and time are never routing
   inputs (`BRIEF.md` l.52, l.109).
 - **Route table — total and mutually exclusive.** trivial → inline fix
-  (embedded) **or** small issue on the current milestone (standalone degrade);
-  small/medium → a new issue on the current milestone; large → a brief to
-  `milestone-feeder`, which plans + creates the follow-up milestone with its own
-  triage gate. Each `severity` value has exactly one destination.
+  (embedded) **or** a new issue (standalone degrade); small/medium → a new
+  issue; large → a brief to `milestone-feeder`, which plans + creates the
+  follow-up milestone with its own triage gate. Each `severity` value has
+  exactly one destination.
+- **Milestone attachment — reconciliation, not a hard-coded assumption.** Every
+  new-issue route (`drift-small` / `drift-medium` / standalone-degraded
+  `drift-trivial`) attaches to the active milestone when one is contextually
+  active, or opens as a backlog issue when none is (or milestone context can't
+  be reliably determined) — never inventing a "current" milestone. This is the
+  single copy of that logic; `review` Step 5 and `sweep` Step 5 both point
+  here.
 - **Convention proposals — a separate lane, not drift-routed.** The engine's
   `PROPOSALS` block does not route through this router; a proposal goes to a
   config-only PR (`skills/review/SKILL.md` Step 3) targeting
@@ -305,11 +343,11 @@ keep judgment in the orchestrator.
   feeds a merge decision. The active issue/PR merges regardless of the route —
   for every drift size and every mode (`BRIEF.md` l.42-44, l.50).
 - **Recursion / termination — milestone granularity, no counter.**
-  Same-milestone fixes (small/medium, standalone-degraded trivial) are **not**
-  re-reviewed; a follow-up milestone **is** re-reviewed only **by construction**
-  (it re-enters `feeder → driver`, which includes coherence). The loop
-  self-terminates because drift shrinks each pass until findings stay
-  in-milestone (`BRIEF.md` l.54-61, l.110).
+  Same-milestone fixes or backlog issues (small/medium, standalone-degraded
+  trivial) are **not** re-reviewed; a follow-up milestone **is** re-reviewed
+  only **by construction** (it re-enters `feeder → driver`, which includes
+  coherence). The loop self-terminates because drift shrinks each pass until
+  findings stay in-milestone (`BRIEF.md` l.54-61, l.110).
 - **Empty state.** `FINDINGS: none` → route nothing, open nothing, hand nothing
   to the feeder, block no merge.
 - **Deferred boundary, documented not built.** The `feeder → driver` auto-handoff
