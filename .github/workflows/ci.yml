@@ -11,13 +11,15 @@ name: CI
 # The job name below ("version-citation-check") is the required-status-check
 # context that follow-up would register in develop's branch protection.
 #
-# Runs on pull_request targeting develop only — this repo's integration
-# branch (.milestone-config/driver.json integrationBranch) — where a
-# .project/ authority-file drift would land.
+# Runs on pull_request targeting develop (this repo's integration branch,
+# .milestone-config/driver.json integrationBranch) AND main — main mirrors
+# develop's required checks (suite baseline), and a required check on a
+# branch demands the workflow trigger include that branch, or develop→main
+# release PRs wedge on "Expected — waiting" (milestone-driver #279/#280).
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [main, develop]
 
 permissions:
   contents: read

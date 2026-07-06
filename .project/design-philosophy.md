@@ -28,7 +28,7 @@ Decisions that require human sign-off *before* they're made — irreversible or 
 > - **Adding a dependency** — the suite stays dependency-light (`jq` on bash, PowerShell `ConvertFrom-Json` on pwsh; no new dependency introduced).
 > - **Changing `.claude-plugin/plugin.json` `version`** — the single source of version truth.
 > - **Altering the read-only-engine / orchestrator-acts boundary.**
-> - The cross-plugin companion changes (the driver step-6.2 embedding, the feeder→driver auto-handoff) are out-of-repo and **tracked, not built here**. (BRIEF.md §"How it runs" l.79-83, §"Plugin packaging" l.102-105; docs/resolution.md §"Dependency note".)
+> - The cross-plugin companion changes are out-of-repo, never built here: the driver step-6.2 embedding **shipped** in `milestone-driver` (`kenmulford/milestone-driver#231`, v1.13.0); the `feeder → driver` handoff shipped only a narrower, human-gated create-time offer in `milestone-feeder` (`kenmulford/milestone-feeder#148`, v0.5.0, `autoHandoff` default `prompt`) — the fully-automated, unattended cycle remains unbuilt anywhere. (BRIEF.md §"How it runs" l.79-83, §"Plugin packaging" l.102-105; docs/resolution.md §"Dependency note".)
 
 ## Error & failure philosophy
 How the system handles and surfaces failure: fail-open vs fail-closed, the user-facing error policy, logging expectations.
