@@ -1,5 +1,5 @@
 {
   "integrationBranch": "develop",
   "protectedBranch": "main",
-  "sourceGlobs": ["skills/**", "agents/**", "hooks/**", ".claude-plugin/**"]
+  "sourceGlobs": ["skills/**", "agents/**", "hooks/**", ".claude-plugin/**", "docs/**", "scripts/**"]
 }

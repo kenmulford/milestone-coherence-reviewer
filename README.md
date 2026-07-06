@@ -55,6 +55,8 @@ In the suite, it runs on its own during a `milestone-driver` build — you don't
 /plugin install superpowers@claude-plugins-official
 ```
 
+If Claude Desktop shows `"Unknown command"` for this plugin's own commands, that's `superpowers` missing — run the two commands above to fix it.
+
 ## Status
 
 v0.1.0 — built and released. Spec in [BRIEF.md](BRIEF.md); built by `milestone-feeder` + `milestone-driver`. Part of the [dev-tools](../dev-tools) suite.

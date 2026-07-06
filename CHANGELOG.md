@@ -2,6 +2,17 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
+## v0.2.1 — audit remediation: mechanical grounding-verify, dogfood, truth-ups
+
+Patch release — the audit-remediation milestone (12 issues, all merged CI-green).
+
+- **Mechanical grounding-verify pass** between engine dispatch and write-up render, with bounded live re-check for groundings resolved outside the pre-dispatch cache — the audit's flagship fix (#38)
+- Full-strength dogfood run against a disposable scratch fixture: the domainSkills grounding path validated end-to-end, recorded in `docs/validation-note.md` (#47)
+- `docs/heal-routing.md` is the sole authority for the route table + reconciliation (#43); sweep's no-milestone fallback routes to review (#42)
+- Act-verify-retry on the PR write path (#44); resumable broad sweep (#45); first-run failure guidance (#46); broadened sourceGlobs (#39); stale version citation fixed (#41)
+- CI scaffold + version-citation check (#48); per-file size-budget check (#49)
+- Precision truth-sweep: shipped human-gated feeder→driver handoff distinguished from the still-deferred unattended cycle; dead driver#232 refs corrected to feeder#148 (#40)
+
 ## v0.2.0 — Coherence beyond per-change drift
 
 **Theme:** Coherence beyond per-change drift — an opt-in app-wide consistency scan and config rule-authoring, closing the loop back into `.project/`.
@@ -67,9 +78,9 @@ Judgment-call PRs for this release: none
 
 Judgment-call PRs for this release: **#9** — the resolve-once layer's `/code-review` ran one fix cycle past the documented 2-cycle cap to land a single, fully-specified CR-strip; the findings were converging (5 → 3 → 1, each narrower) on a sound plan, so the extra cycle was taken (rather than parking a foundational issue over a one-liner) and labeled for audit.
 
-Tracked as companion changes in their own repos (still deferred):
+Tracked as companion changes in their own repos at release time:
 
-- **Driver-embedded path** — a new `solve-issue` step (~6.2, after `/code-review`) + a default-filled `coherenceReviewAgent` profile key + heal-orchestration, in `milestone-driver`. → [kenmulford/milestone-driver#231](https://github.com/kenmulford/milestone-driver/issues/231)
-- **The automated `feeder → driver` handoff** (the feeder creating a milestone and the driver then running it, no human in between) — a new capability in the feeder/driver. Standalone v0.1.0 can create the follow-up milestone via the feeder but cannot auto-run the driver. → [kenmulford/milestone-driver#232](https://github.com/kenmulford/milestone-driver/issues/232)
+- **Driver-embedded path** — a new `solve-issue` step (~6.2, after `/code-review`) + a default-filled `coherenceReviewAgent` profile key + heal-orchestration, in `milestone-driver`. → [kenmulford/milestone-driver#231](https://github.com/kenmulford/milestone-driver/issues/231) — **Update (shipped 2026-06-24, `milestone-driver` v1.13.0):** coherence review now runs before the final `/code-review` in `solve-issue`/`solve-milestone`, gated on the reviewer being present + configured, silently skipped otherwise, never gating.
+- **The automated `feeder → driver` handoff** (the feeder creating a milestone and the driver then running it, no human in between) — a new capability in the feeder/driver. Standalone v0.1.0 can create the follow-up milestone via the feeder but cannot auto-run the driver. → [kenmulford/milestone-feeder#148](https://github.com/kenmulford/milestone-feeder/issues/148) (corrected — `milestone-driver#232` never existed) — **Update (shipped 2026-06-24, `milestone-feeder` v0.5.0):** `create` now offers to hand a clean run straight to the driver, governed by `feeder.json#autoHandoff` (`prompt` default / `auto` / `off`). This is a narrower, human-gated create-time handoff, not the unattended no-human-in-between cycle described above — that fully-automated cycle is still not built.
 
 Done after the v0.1.0 release: the plugin is now listed in the [`kenmulford/milestone-suite`](https://github.com/kenmulford/milestone-suite) catalog (HTTPS `url` source) — installable from the suite as well as its own marketplace.
