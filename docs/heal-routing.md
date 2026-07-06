@@ -265,24 +265,31 @@ not a routing input.
 
 ## The deferred boundary — `feeder → driver` auto-handoff (NOT built here)
 
-The router documents one boundary it does **not** cross. The automated
-`feeder → driver` handoff — the driver **auto-running** a feeder-created
-follow-up milestone after the active milestone finishes, with **no human in
-between** — **does not exist today** (`BRIEF.md` l.83, l.109):
+The router documents one boundary it does **not** cross. The **unattended**
+`feeder → driver` handoff this design targets — the driver auto-running a
+feeder-created follow-up milestone **after the active milestone finishes**,
+with **no human in between** — **still does not exist** (`BRIEF.md` l.83,
+l.109):
 
 - In **standalone v1** (this repo's `review` skill), a `drift-large` route can
-  **create the follow-up milestone via the feeder** and **stops there**. The
-  feeder currently ends at `create`; a **human** runs the driver on the
-  follow-up milestone.
-- Standalone v1 **cannot auto-run the driver**. The fully-automated cycle (feeder
-  creates → driver builds, unattended) is the **embedded path**, and the auto-run
-  itself is a separate cross-plugin companion change in the feeder/driver — on
-  the same footing as the step-6.2 driver embedding (`BRIEF.md` l.79, l.81,
-  l.83).
+  **create the follow-up milestone via the feeder** and **stops there**. As of
+  `milestone-feeder` v0.5.0
+  ([kenmulford/milestone-feeder#148](https://github.com/kenmulford/milestone-feeder/issues/148)),
+  the feeder's `create` step **offers** to hand a clean run straight to the
+  driver immediately after creating it (`feeder.json#autoHandoff`, default
+  `prompt`) — a **human** must say yes by default; the shipped feature has no
+  "wait for the active milestone to finish" sequencing, so it is not the cycle
+  this section describes.
+- Standalone v1 **cannot auto-run the driver itself**. The fully-automated,
+  unattended cycle this doc targets (feeder creates → driver builds after the
+  active milestone completes, no human prompt) is a **separate cross-plugin
+  companion change**, still unbuilt, in the feeder/driver — on the same footing
+  as the step-6.2 driver embedding (`BRIEF.md` l.79, l.81, l.83).
 - This boundary is **documented, not implemented**. The router records it (here,
   and the `review` skill surfaces it in its write-up) so a reader knows the large
-  route's follow-up milestone is created but not yet auto-built — it must not be
-  presented as if the driver will pick it up automatically.
+  route's follow-up milestone is created but not yet auto-built into that
+  unattended cycle — it must not be presented as if the driver will pick it up
+  automatically with no human involved.
 
 ## Why there is no routing script
 
@@ -350,9 +357,12 @@ keep judgment in the orchestrator.
   findings stay in-milestone (`BRIEF.md` l.54-61, l.110).
 - **Empty state.** `FINDINGS: none` → route nothing, open nothing, hand nothing
   to the feeder, block no merge.
-- **Deferred boundary, documented not built.** The `feeder → driver` auto-handoff
-  does not exist today; standalone v1 creates the follow-up milestone via the
-  feeder but cannot auto-run the driver (`BRIEF.md` l.83, l.109).
+- **Deferred boundary, documented not built.** The **unattended** `feeder →
+  driver` auto-handoff (no human between milestones) still does not exist;
+  standalone v1 creates the follow-up milestone via the feeder but cannot
+  auto-run the driver itself. `milestone-feeder`#148 shipped a narrower,
+  human-gated create-time offer (`autoHandoff`, default `prompt`) — not this
+  cycle (`BRIEF.md` l.83, l.109).
 
 Same DNA as the rest of the layer: the [engine](../agents/coherence-reviewer.md)
 hints the drift size, [analyze-once](analyze-once.md) shapes the slice, this doc
