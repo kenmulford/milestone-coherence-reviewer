@@ -2,6 +2,32 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop; v0.1.0 released.)
 
+## v0.3.0 — readable coherence memory (recall before re-analysis)
+
+**Theme:** the write-only memory mirror gains its read half. Before analyzing a change, the reviewer recalls prior coherence write-ups whose grounding touches the same files and reuses or references them instead of re-deriving findings from scratch — advisory-only, diff-keyed, and fail-soft. No second store; the existing `memory-mirror` target gains a read path.
+
+### ✨ Readable coherence memory
+
+| Issue | PR | What |
+|---|---|---|
+| #69 Add a `--recall` read-back mode to `memory-mirror.{sh,ps1}` | #74 | A read-only `--recall [--repo-root <dir>] -- <path> …` mode on both script twins. Reuses the existing `resolve_target`/`Resolve-Target` verbatim (same detect-or-fallback store, no new store, no new dependency); one read + one linear pass; emits a TAB-separated record stream (`ENTRY-BEGIN` / `MATCH` / verbatim body / `ENTRY-END` / `NONE` / `SUMMARY` last) for prior entries whose `<path>:<line>` grounding refs byte-match a touched path. Absent/empty/unreadable store → `NONE` + `SUMMARY entries=0`, exit 0 (no `MIRROR-FAILED` case for recall); bad usage → exit 2. Byte-for-byte bash/pwsh parity verified across all states, including a multibyte fixture (the `.ps1` emits UTF-8-no-BOM straight to the stdout stream). |
+| #70 Document the recall/read-back contract, symmetric to the write path | #73 | Recorded the recall contract as a doc — where recall attaches, the diff-keyed match against prior entries' `<path>:<line>` refs, the advisory-never-gates invariant, and the fail-soft degradation matrix — scoped to the `review` flow only, with an explicit deferred-boundary note for sweep (sweep has no diff). |
+| #71 Wire recall into the review orchestrator as advisory context | #75 | Recall runs **orchestrator-side** at review start (gathered once, before the single engine dispatch) and is handed to the read-only engine as an advisory **fifth** context part — the engine runs no recall script (read-only-engine ↔ orchestrator split preserved). Reuse-when-valid / flag-when-stale; recall never gates, never auto-suppresses a finding, and is never fed to the severity-only router. The write-up renders a recall status note (matched priors, or an explicit "no related prior write-ups found"). Fail-soft: empty/failed recall → analysis proceeds from scratch. Recall mechanics live in a single source, `docs/recall.md`, with lean pointers from `skills/review/SKILL.md`, `docs/analyze-once.md`, and `docs/write-up.md`. |
+| #68 Bump plugin version to 0.3.0 | #72 | Minor version bump (feature-additive milestone); `.claude-plugin/plugin.json` `version` 0.2.1 → 0.3.0, plus the CI-required `.project/conventions.md` version citation. |
+
+### Consumer notes (upgrading from v0.2.1)
+
+- **New behavior on the `review` path:** the reviewer now recalls prior coherence write-ups touching the same files before analyzing, reusing or referencing them instead of re-deriving. It is **advisory only** — it never gates a finding, never auto-suppresses one, and is never an input to heal-routing (which stays severity-only). Empty or failed recall degrades to the prior from-scratch behavior.
+- **Uses the store that already exists** — the `memory-mirror` detect-or-fallback target (Obsidian vault / `autoMemoryDirectory` / `.milestone-config/.runtime/` fallback). No second store, no new dependency.
+- **New `--recall` mode** on `scripts/memory-mirror.{sh,ps1}`, and a new single-source contract doc `docs/recall.md`.
+- **Sweep is unchanged** — recall is `review`-path only; sweep-mode recall is explicitly deferred (a sweep has no diff to key the match on).
+- The `skills/review/SKILL.md` size-budget ceiling was lowered (5100 → 5090) as the recall mechanics were relocated into `docs/recall.md` — a budget *reduction*, per the size-budgets ratchet's shrink rule.
+- **No schema changes** to `.milestone-config/driver.json` — no new profile keys.
+
+### ⚖️ Post-run audit trail
+
+Judgment-call PRs for this release: none
+
 ## v0.2.1 — audit remediation: mechanical grounding-verify, dogfood, truth-ups
 
 Patch release — the audit-remediation milestone (12 issues, all merged CI-green).
