@@ -47,6 +47,21 @@
 # Dependency: jq, only to read the optional `autoMemoryDirectory` setting — the
 #   suite's already-permitted JSON tool (same as resolve-config.sh). Detection
 #   leg 3 is simply skipped if jq is absent; legs 1, 2 and the fallback need no jq.
+#
+# RECALL MODE (read-only; issue #69):
+#   memory-mirror.sh --recall [--repo-root <dir>] -- <path> [<path> ...]
+#   Reads (never writes) the SAME store the write mode would append to (resolve_target
+#   is reused verbatim) and greps the prior write-up entries for grounding refs whose
+#   `<path>:<line>` path component byte-matches one of the given touched paths. Does
+#   exactly ONE read + ONE linear pass; emits a TAB-separated record stream on stdout,
+#   SUMMARY last:
+#     ENTRY-BEGIN<TAB>slug<TAB>ts · MATCH<TAB>path<TAB>line · <entry body lines verbatim>
+#     · ENTRY-END<TAB>slug<TAB>ts · NONE<TAB>no prior write-ups found (iff 0 entries
+#     matched) · SUMMARY<TAB>entries=<N><TAB>matches=<M>.
+#   An absent, empty, or unreadable store is EXPECTED, not exceptional: NONE + zero
+#   SUMMARY, exit 0. Recall has NO MIRROR-FAILED case and writes nothing to stderr on
+#   that path (fail-soft / absence-means-skip). Exit codes: 0 on any well-formed recall;
+#   2 on bad usage (no path list after `--`, or --recall combined with --slug/--file).
 set -u
 export LC_ALL=C
 
@@ -57,42 +72,60 @@ fail() { err "MIRROR-FAILED	$*"; exit 1; }   # best-effort failure: report, exit
 usage() {
   err "usage: $PROG --slug <issue-or-pr-slug> [--repo-root <dir>] [--file <path>]"
   err "       $PROG --slug <slug> [--repo-root <dir>] < write-up.md"
+  err "       $PROG --recall [--repo-root <dir>] -- <path> [<path> ...]"
   exit 2
 }
 
 # ----------------------------------------------------------------------------
-# Parse args
+# Parse args. Two modes share one flag loop:
+#   write  (default): --slug <slug> [--repo-root <dir>] [--file <path>]  -> append entry
+#   recall (--recall): [--repo-root <dir>] -- <path> [<path> ...]        -> read-only grep
+# The trailing `-- <path>...` list mirrors resolve-config.sh's `docs` subcommand
+# convention (resolve-config.sh:242-266).
 # ----------------------------------------------------------------------------
-SLUG=""; REPO_ROOT="$PWD"; CONTENT_FILE=""
+SLUG=""; REPO_ROOT="$PWD"; CONTENT_FILE=""; RECALL=0; SAW_DDASH=0; PATHS=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --slug)      [ "$#" -ge 2 ] || usage; SLUG="$2"; shift 2 ;;
     --repo-root) [ "$#" -ge 2 ] || usage; REPO_ROOT="$2"; shift 2 ;;
     --file)      [ "$#" -ge 2 ] || usage; CONTENT_FILE="$2"; shift 2 ;;
+    --recall)    RECALL=1; shift ;;
+    --)          SAW_DDASH=1; shift; PATHS=("$@"); break ;;
     -h|--help|help) usage ;;
     *) err "$PROG: unexpected arg: $1"; usage ;;
   esac
 done
-[ -n "$SLUG" ] || { err "$PROG: --slug is required"; usage; }
 REPO_ROOT="${REPO_ROOT%/}"
 
-# Sanitize the slug for filesystem use: keep word chars, dot and dash; collapse
-# everything else to '-'. Prevents a slug like "feature/x" from escaping the dir.
-SAFE_SLUG="$(printf '%s' "$SLUG" | tr -c 'A-Za-z0-9._-' '-')"
-[ -n "$SAFE_SLUG" ] || SAFE_SLUG="coherence"
-
-# ----------------------------------------------------------------------------
-# Read the write-up content (from --file or stdin). Best-effort: an unreadable
-# file is a write failure, not a crash.
-# ----------------------------------------------------------------------------
-if [ -n "$CONTENT_FILE" ]; then
-  [ -f "$CONTENT_FILE" ] || fail "content file not found: $CONTENT_FILE"
-  CONTENT="$(cat "$CONTENT_FILE"; printf 'X')"; CONTENT="${CONTENT%X}"
+# Mode validation. Recall is read-only: it takes a touched-path list after `--` and
+# rejects the write-mode flags; write mode never accepts a bare `--`.
+if [ "$RECALL" -eq 1 ]; then
+  { [ -n "$SLUG" ] || [ -n "$CONTENT_FILE" ]; } && usage   # --recall + --slug/--file -> exit 2
+  [ "${#PATHS[@]}" -ge 1 ] || usage                        # --recall needs >=1 path after --
 else
-  CONTENT="$(cat; printf 'X')"; CONTENT="${CONTENT%X}"
+  [ "$SAW_DDASH" -eq 1 ] && { err "$PROG: unexpected arg: --"; usage; }
+  [ -n "$SLUG" ] || { err "$PROG: --slug is required"; usage; }
 fi
-# An empty write-up is still a valid mirror (e.g. a clean-fit headline produced
-# upstream) — we do not reject it; we record what we were given.
+
+# Write-mode preparation (slug sanitize + content read). Skipped entirely for
+# recall, which reads no stdin and needs no slug.
+if [ "$RECALL" -ne 1 ]; then
+  # Sanitize the slug for filesystem use: keep word chars, dot and dash; collapse
+  # everything else to '-'. Prevents a slug like "feature/x" from escaping the dir.
+  SAFE_SLUG="$(printf '%s' "$SLUG" | tr -c 'A-Za-z0-9._-' '-')"
+  [ -n "$SAFE_SLUG" ] || SAFE_SLUG="coherence"
+
+  # Read the write-up content (from --file or stdin). Best-effort: an unreadable
+  # file is a write failure, not a crash.
+  if [ -n "$CONTENT_FILE" ]; then
+    [ -f "$CONTENT_FILE" ] || fail "content file not found: $CONTENT_FILE"
+    CONTENT="$(cat "$CONTENT_FILE"; printf 'X')"; CONTENT="${CONTENT%X}"
+  else
+    CONTENT="$(cat; printf 'X')"; CONTENT="${CONTENT%X}"
+  fi
+  # An empty write-up is still a valid mirror (e.g. a clean-fit headline produced
+  # upstream) — we do not reject it; we record what we were given.
+fi
 
 # ----------------------------------------------------------------------------
 # Detect-or-fallback target resolution. Echoes "TIER<TAB>PATH"; the file is the
@@ -141,6 +174,79 @@ resolve_target() {
 TARGET="$(resolve_target)"
 TIER="${TARGET%%	*}"
 MEM_FILE="${TARGET#*	}"
+
+# ----------------------------------------------------------------------------
+# RECALL (read-only): ONE read + ONE linear pass over the resolved store, then a
+# TAB-separated record stream on stdout (ENTRY-BEGIN / MATCH / body / ENTRY-END /
+# NONE / SUMMARY), SUMMARY last — the buffered emit/flush shape of resolve-config.sh
+# (:75-93). resolve_target above is reused verbatim, so recall reads the SAME store
+# a write would append to. An absent, empty, or unreadable store is EXPECTED, not a
+# fault: NONE + zero SUMMARY, exit 0. Recall has NO MIRROR-FAILED case (fail-soft /
+# absence-means-skip, .project/design-philosophy.md#Error & failure philosophy).
+# ----------------------------------------------------------------------------
+if [ "$RECALL" -eq 1 ]; then
+  RTAB=$'\t'
+  # Header delimiter the write mode emits (l.158; the dash is em-dash U+2014). A
+  # matching line starts a new entry and yields its slug + timestamp. The slug
+  # charset matches the write mode's sanitizer; the timestamp is anything non-`)`.
+  header_re='^## Coherence write-up — ([A-Za-z0-9._-]+) \(([^)]+)\)$'
+  # Grounding ref inside an entry body: a maximal `<path>:<line>` token (path charset
+  # A-Za-z0-9._/- with maximal munch, so backticks/spaces/parens delimit naturally and
+  # `x/foo.sh:1` cannot match touched `foo.sh`). Only this citation form matches
+  # (docs/write-up.md:56).
+  ref_re='([A-Za-z0-9._/-]+):([0-9]+)'
+  out=(); n_entries=0; n_matches=0
+  cur_slug=""; cur_ts=""; in_entry=0
+  ebody=(); ematch=(); ecount=0
+
+  # Flush the current entry to the output buffer iff it matched >=1 touched path:
+  # ENTRY-BEGIN, then its MATCH records (scan order), then its body verbatim, ENTRY-END.
+  flush_entry() {
+    if [ "$in_entry" -eq 1 ] && [ "$ecount" -gt 0 ]; then
+      out+=("ENTRY-BEGIN${RTAB}${cur_slug}${RTAB}${cur_ts}")
+      local r b
+      for r in "${ematch[@]}"; do out+=("$r"); done
+      for b in "${ebody[@]}";  do out+=("$b"); done
+      out+=("ENTRY-END${RTAB}${cur_slug}${RTAB}${cur_ts}")
+      n_entries=$((n_entries+1)); n_matches=$((n_matches+ecount))
+    fi
+    in_entry=0; ebody=(); ematch=(); ecount=0
+  }
+
+  # Single read + single pass. Absent/empty/unreadable -> skip the loop -> NONE.
+  if [ -f "$MEM_FILE" ] && [ -r "$MEM_FILE" ] && [ -s "$MEM_FILE" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      line="${line//$'\r'/}"                       # strip ALL CR (parity, resolve-config.sh:346-355)
+      if [[ $line =~ $header_re ]]; then
+        flush_entry
+        cur_slug="${BASH_REMATCH[1]}"; cur_ts="${BASH_REMATCH[2]}"
+        in_entry=1; ebody=(); ematch=(); ecount=0
+      elif [ "$in_entry" -eq 1 ]; then
+        ebody+=("$line")                           # body verbatim; the header line is never a body line
+        rest="$line"
+        while [[ $rest =~ $ref_re ]]; do
+          full="${BASH_REMATCH[0]}"; pc="${BASH_REMATCH[1]}"; lc="${BASH_REMATCH[2]}"
+          for p in "${PATHS[@]}"; do
+            if [ "$pc" = "$p" ]; then               # byte-identical, case-sensitive, no normalization
+              ematch+=("MATCH${RTAB}${pc}${RTAB}${lc}"); ecount=$((ecount+1)); break
+            fi
+          done
+          rest="${rest#*"$full"}"                   # advance past this maximal token; no dedupe
+        done
+      fi
+      # lines before the first header belong to no entry and are ignored
+    done < "$MEM_FILE"
+    flush_entry
+  fi
+
+  # Emit buffered entry records, then NONE (iff 0 entries matched), then SUMMARY last.
+  if [ "${#out[@]}" -gt 0 ]; then
+    for l in "${out[@]}"; do printf '%s\n' "$l"; done
+  fi
+  [ "$n_entries" -eq 0 ] && printf 'NONE\tno prior write-ups found\n'
+  printf 'SUMMARY\tentries=%s\tmatches=%s\n' "$n_entries" "$n_matches"
+  exit 0
+fi
 
 # ----------------------------------------------------------------------------
 # Append the write-up as a dated, slug-headed entry. mkdir -p the parent so the
