@@ -83,7 +83,7 @@ Resolve the suite's shared mechanics and the cited `.project/` sections by **dri
 
 Build the review context a **single time** per review call, then dispatch the engine **once** against it (`docs/analyze-once.md` Steps 1-2; `BRIEF.md` l.35-40). Nothing below is re-read, re-resolved, or re-derived after this point.
 
-1. **Assemble the review context (once)** — its four parts (`docs/analyze-once.md` Step 1):
+1. **Assemble the review context (once)** — its five parts (`docs/analyze-once.md` Step 1):
 
    | Part | Source |
    |---|---|
@@ -91,10 +91,21 @@ Build the review context a **single time** per review call, then dispatch the en
    | the resolved `.project/` sections | from Step 1 (verbatim `SECTION-BEGIN … SECTION-END` slices) — read once |
    | the `domainSkills` pointers | from Step 1's `KEY domainSkills …` records — read once |
    | the bounded, diff-keyed grep results | greps within `sourceGlobs` for the specific symbols the diff introduces — **never** a whole-repo scan (`BRIEF.md` l.27, l.112) |
+   | the recalled prior write-ups (advisory) | the prior coherence write-ups whose recorded `<path>:<line>` grounding refs intersect the diff's touched paths — read back once via `scripts/memory-mirror.{sh,ps1} --recall` (item 2 below), handed to the engine as advisory context; source = the orchestrator (this skill) |
 
-2. **Dispatch the read-only engine once** (`agents/coherence-reviewer.md`, #3) against that context — it is the consolidated analysis. Brief it with exactly the four context parts above (its "What you receive"); it returns its structured `FINDINGS` block **and** a parallel `PROPOSALS` block, and nothing else. **Do not** make the engine re-read whole docs or re-resolve the shared keys (`docs/analyze-once.md` Step 2; the engine stays read-only and acts on nothing). The engine's `FINDINGS` block carries `REVIEWED`, the three `SOURCES` lines, and per-finding `symbol` / `lens` / `grounding` (exactly one ref) / `severity` (the drift-size hint) / `description`. The parallel `PROPOSALS` block carries, per proposal, `heading` / `rule` / `exemplar` / `sites` / `disagree` / `diverging` (when `disagree: yes`) / `source` / `grounding` — the rule-authoring lane the orchestrator enacts at Step 3. `PROPOSALS: none` means nothing to propose.
+2. **Read recall once (advisory) — the fifth context part** (`docs/write-up.md` §"Recall (read-back)"; #69's `--recall` mode). After item 1's diff makes the touched paths known and **before** the single engine dispatch below, read back prior write-ups **once**, orchestrator-side — the engine runs no recall itself (`agents/coherence-reviewer.md` §"Recalled prior write-ups (advisory only)"). Pick the host exactly as Step 1 and the Step 4 mirror row do — **pwsh on Windows, bash elsewhere**:
 
-3. **`FINDINGS: none` is a clean terminal** (`docs/analyze-once.md` §"Zero-findings — a clean terminal"; `agents/coherence-reviewer.md` l.94, l.102). Nothing to distribute, nothing to route. Skip Step 5's routing entirely and render the clean-fit write-up at Step 4 below (the independent PROPOSALS lane at Step 3 still runs — `FINDINGS: none` speaks to drift only). This is the success case, not an error — and `FINDINGS: none` with degraded `SOURCES` lines (thin grounding) is still a clean terminal.
+   | Step | How |
+   |---|---|
+   | invoke | `scripts/memory-mirror.<sh\|ps1> --recall --repo-root <REPO_ROOT> -- <the diff's touched paths>` — the touched paths from `git diff <integrationBranch>...<head> --name-only` |
+   | parse ONCE | read #69's documented TAB record stream a **single** time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
+   | hand off (Decision 4) | for each matched entry, wrap its **verbatim body lines** as a `SECTION-BEGIN … SECTION-END`-style payload — the **same** verbatim-payload shape the resolved `.project/` sections use (Step 1 item 2) — as the engine's fifth advisory context part. **Never** hand the engine the raw TAB stream |
+   | empty state | `entries=0`, or the `NONE` sentinel, with **exit 0** → the recall part is empty/absent; the engine analyzes exactly as today (Step 4 renders the "no related prior write-ups found" note). A store that is **absent / empty / unreadable is this exit-0 empty-state — NOT a failure** (`scripts/memory-mirror.sh:61-64`; the `.ps1` twin) |
+   | failure state | ONLY a genuine invocation failure — a **nonzero exit** from a missing script/binary, a host-detection failure, or the **exit-2** bad-usage case — is a recall failure: note recall is unavailable and proceed exactly as if recall did not exist (analyze from scratch), fail-soft, never crash, never block the merge (`.project/design-philosophy.md#Error & failure philosophy`). Model the note on the Step 4 mirror table's `MIRROR-FAILED …` skip-and-note, scoped per this row |
+
+3. **Dispatch the read-only engine once** (`agents/coherence-reviewer.md`, #3) against that context — it is the consolidated analysis. Brief it with exactly the **five** context parts above (its "What you receive") — the recall part is **advisory**; it returns its structured `FINDINGS` block **and** a parallel `PROPOSALS` block, and nothing else. **Do not** make the engine re-read whole docs or re-resolve the shared keys (`docs/analyze-once.md` Step 2; the engine stays read-only and acts on nothing). The engine's `FINDINGS` block carries `REVIEWED`, the three `SOURCES` lines, and per-finding `symbol` / `lens` / `grounding` (exactly one ref) / `severity` (the drift-size hint) / `description`. The parallel `PROPOSALS` block carries, per proposal, `heading` / `rule` / `exemplar` / `sites` / `disagree` / `diverging` (when `disagree: yes`) / `source` / `grounding` — the rule-authoring lane the orchestrator enacts at Step 3. `PROPOSALS: none` means nothing to propose.
+
+4. **`FINDINGS: none` is a clean terminal** (`docs/analyze-once.md` §"Zero-findings — a clean terminal"; `agents/coherence-reviewer.md` l.94, l.102). Nothing to distribute, nothing to route. Skip Step 5's routing entirely and render the clean-fit write-up at Step 4 below (the independent PROPOSALS lane at Step 3 still runs — `FINDINGS: none` speaks to drift only). This is the success case, not an error — and `FINDINGS: none` with degraded `SOURCES` lines (thin grounding) is still a clean terminal.
 
 ### Step 2.5 — Verify grounding, drop what fails
 
@@ -163,7 +174,16 @@ Render the write-up **entirely** from the engine's `FINDINGS` **and** `PROPOSALS
 
 4. **Clean-fit (`FINDINGS: none`) still produces a write-up — never silence** (`docs/write-up.md` §"The empty / clean-fit state"). Render a positive "**Fits cleanly — nothing changed**" headline that states **what was checked** (read from the `SOURCES` lines — which of app-grep / project-docs / domain-skills were available, so a genuine clean fit reads distinct from a thin-grounding run). No per-finding items, no redo one-liners — there is nothing to redo, and nothing is opened. (`FINDINGS: none` and `PROPOSALS: none` are independent: a clean-fit run may still carry a proposal, and a run with findings may carry none.)
 
-5. **Mirror the same content to the three supplemental audit-trail copies — each best-effort, each degrading without suppressing the inline summary** (`docs/write-up.md` §"Graceful degradation"; `BRIEF.md` l.68). Render the mirrors as copies of the *same* write-up — never its canonical home:
+5. **Render the recall status note — never silence** (Decision: recall status render; `docs/write-up.md` §"Recall (read-back)", named in that doc's procedural-status-note exception list under §"What the write-up renders from"). Keyed off the `entries=<N>` count from Step 2 item 2's single SUMMARY parse — two branches, always exactly one:
+
+   | Branch | Render |
+   |---|---|
+   | `entries=<N>`, N > 0 | a short note **referencing the matched prior write-up(s)** that informed the analysis |
+   | N = 0, the `NONE` sentinel, or recall **unavailable** (Step 2 item 2's failure state) | the explicit **"no related prior write-ups found"** note |
+
+   This is a **procedural status note** — like the D17 nudge (Step 1.4) and the deferred-boundary statement (Step 5.3) — **not** an engine-field content claim, so it is exempt from the "renders only from engine `FINDINGS`/`PROPOSALS` fields" rule the same way those are (`docs/write-up.md` §"What the write-up renders from" — the procedural-status-note exception list). It is part of the inline write-up content the mirrors (item 6) copy.
+
+6. **Mirror the same content to the three supplemental audit-trail copies — each best-effort, each degrading without suppressing the inline summary** (`docs/write-up.md` §"Graceful degradation"; `BRIEF.md` l.68). Render the mirrors as copies of the *same* write-up — never its canonical home:
 
    | Mirror | How (pick the host: pwsh on Windows, bash elsewhere) | Skip-and-note when |
    |---|---|---|
@@ -197,7 +217,7 @@ Surface the inline write-up as the run's deliverable, with a flat summary of wha
 - **Never writes to or force-pushes the protected branch.** This skill opens issues / hands the feeder a brief, writes comments + a memory mirror, and **may open a config-only PR** for a proposed `.project/conventions.md` entry (on a `chore/propose-<slug>` branch off `integrationBranch`) — it edits **no** application code, creates **no** application-code branch, force-pushes nothing, and never touches the protected branch (`protectedBranch` in the driver profile; `BRIEF.md` l.126).
 - **Degraded environment still runs.** Thin/absent `.project/` or absent `.milestone-config/` is never an error — fall back to bounded diff-keyed greps with reduced grounding, and nudge toward `milestone-bootstrapper` once (`BRIEF.md` l.89, l.96).
 - **The inline write-up is the deliverable.** Memory, the issue comment, and the PR comment are supplemental audit-trail copies; an unavailable mirror is skipped and noted, never allowed to suppress the inline summary (`docs/write-up.md`; `BRIEF.md` l.68, l.115).
-- **Analyze once, distribute slices.** The context is gathered once and the engine dispatched once; each downstream route gets only its minimal, self-contained slice — never a re-gather, re-analyze, or re-resolve (`docs/analyze-once.md`; `BRIEF.md` l.114).
+- **Analyze once, distribute slices.** The context is gathered once (including the advisory recall read-back — gathered once at Step 2, never re-read) and the engine dispatched once; each downstream route gets only its minimal, self-contained slice — never a re-gather, re-analyze, or re-resolve (`docs/analyze-once.md`; `BRIEF.md` l.114).
 - **Read-only engine, orchestrator acts.** The engine returns findings **and** proposals — it acts on nothing; this skill performs the heal (and opens any config-only PR). The engine never heals, writes files, opens issues, opens a PR, or runs `gh` (`agents/coherence-reviewer.md`; `BRIEF.md` l.113).
 
 ## Output style

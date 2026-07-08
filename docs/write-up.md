@@ -42,12 +42,15 @@ invariant is honest, not contradicted below:
 (This "content" scope excludes procedural status notes the write-up carries —
 a skipped mirror note (covered below in [Graceful
 degradation](#graceful-degradation--a-missing-mirror-never-blocks-the-headline)),
-plus the D17 `milestone-bootstrapper` nudge, a closed-duplicate note, and the
-deferred-boundary statement (each specified where the rendering skill emits
-it — `skills/review/SKILL.md` Step 1, Step 3, and Step 5, respectively).
-These describe the run's own mechanics, not the reviewed change, so they are
-outside this "content elements" scope, not additional non-engine-field content
-claims.)
+plus the D17 `milestone-bootstrapper` nudge, a closed-duplicate note, the
+**recall status note** (the reference to matched prior write-ups, or the
+explicit "no related prior write-ups found" — see [Recall
+(read-back)](#recall-read-back--prior-write-ups-before-re-analysis) below), and
+the deferred-boundary statement (each specified where the rendering skill emits
+it — `skills/review/SKILL.md` Step 1, Step 3, Step 4, and Step 5,
+respectively). These describe the run's own mechanics, not the reviewed change,
+so they are outside this "content elements" scope, not additional
+non-engine-field content claims.)
 
 | Write-up element | Built from (engine `FINDINGS` field) |
 | --- | --- |
@@ -330,19 +333,25 @@ suppresses the inline summary. (`BRIEF.md` l.68; memory-as-audit-trail grounded 
 Symmetric to the write path above, the `review` flow also **reads back** prior
 write-ups before re-analysis — so a re-review of a change that touches the same
 code sees what an earlier run already said about it. Recall is the read half of
-the memory mirror; this section is its contract.
+the memory mirror, reading back from that same supplemental audit-trail store
+(`BRIEF.md` §"Communication is the actual product" l.68; §"Recorded decisions"
+l.115 — the inline write-up is the deliverable, memory is the audit trail); this
+section is its contract.
 
 ### Where recall attaches, and how it matches
 
 **Recall runs orchestrator-side**, at the start of the `review` skill's flow —
 the `review` path **only** (see [the deferred
-boundary](#the-deferred-boundary--sweep-recall-not-built-here) below). Its
-results are **handed to** the read-only
-[coherence-reviewer](../agents/coherence-reviewer.md) engine as additional
-**advisory context**; the engine itself runs no recall script and keeps its
-read-only contract (`.project/design-philosophy.md#Layering & boundaries` l.18 —
-the read-only-engine ↔ orchestrator-acts split; `agents/coherence-reviewer.md`
-§"Read-only — what you produce and what you never do" l.61).
+boundary](#the-deferred-boundary--sweep-recall-not-built-here) below) — gathered
+**once** as part of the review context the orchestrator assembles, never
+re-derived downstream (`BRIEF.md` §"Analyze once, then distribute (token
+efficiency)" l.33; §"Recorded decisions" l.114). Its results are **handed to**
+the read-only [coherence-reviewer](../agents/coherence-reviewer.md) engine as
+additional **advisory context**; the engine itself runs no recall script and
+keeps its read-only contract (`.project/design-philosophy.md#Layering &
+boundaries` l.18 — the read-only-engine ↔ orchestrator-acts split;
+`agents/coherence-reviewer.md` §"Read-only — what you produce and what you never
+do" l.72).
 
 Recall reads from the **same detect-or-fallback target the write path resolves** —
 `scripts/memory-mirror.sh` `resolve_target()` (l.102-139: the four legs —
@@ -376,19 +385,29 @@ absence-means-skip; "Coherence heals; it never gates").
 | **Empty store** — target resolves but holds no entries | render "no prior write-ups found"; continue |
 | **Unreadable or corrupt store** — target resolves but does not parse | render "no prior write-ups found"; continue |
 
+All three rows are #69's `--recall` **exit-0 empty-state** — the `NONE` sentinel
+plus `SUMMARY entries=0` on stdout (`scripts/memory-mirror.sh:61-64`) — a
+store that is absent/empty/unreadable is **not** a failure. A **genuine
+invocation failure** (a *nonzero* exit — a missing script/binary, a
+host-detection failure, or the exit-2 bad-usage case) is the separate fail-soft
+case: the orchestrator notes recall is unavailable and proceeds from scratch,
+also never a crash and never a merge block (`skills/review/SKILL.md` Step 2,
+item 2's failure state).
+
 ### Advisory, never gates — stated both ways
 
 A matched prior write-up is **context only**, never a verdict input:
 
 - **It never alters the review.** It does not change the engine's `FINDINGS` /
-  `PROPOSALS` blocks and never blocks the merge
-  (`.project/design-philosophy.md#Error & failure philosophy` "Coherence heals;
-  it never gates"; `docs/heal-routing.md` l.9-12).
+  `PROPOSALS` blocks and never blocks the merge (`BRIEF.md` §"It heals, it
+  doesn't gate" l.42-52; `.project/design-philosophy.md#Error & failure
+  philosophy` "Coherence heals; it never gates"; `docs/heal-routing.md` l.9-12).
 - **It is never fed to the router.** A recall match is **not** an input to the
   `severity`-keyed heal-routing decision — it joins the same excluded class as
-  heal-routing's "Tempting input" table (`docs/heal-routing.md` §"The single
-  routing key — drift size, nothing else" l.25-39). Recall informs the reader; it
-  never moves where a fix lands.
+  heal-routing's "Tempting input" table (`BRIEF.md` §"Recorded decisions" l.109 —
+  heals, never gates, routes by drift size only; `docs/heal-routing.md` §"The
+  single routing key — drift size, nothing else" l.25-39). Recall informs the
+  reader; it never moves where a fix lands.
 
 ### The deferred boundary — sweep recall (NOT built here)
 

@@ -31,8 +31,9 @@ review context the orchestrator assembles before it runs the analysis.
 ## Step 1 — Gather the review context (once)
 
 The orchestrator assembles the review context a **single time** per review call.
-It has four parts, and none of them is re-read, re-resolved, or re-derived after
-this point (`BRIEF.md` l.35):
+It has five parts, and none of them is re-read, re-resolved, or re-derived after
+this point (`BRIEF.md` l.35). The fifth — recall — is the **`review` path only**
+(sweep recall is not built; see the note under the table):
 
 | Part | Source | Resolved by |
 | --- | --- | --- |
@@ -40,10 +41,17 @@ this point (`BRIEF.md` l.35):
 | **The resolved `.project/` sections** | the cited `conventions.md` / `design-system.md` / `library-manifest.md` / `design-philosophy.md` sections, verbatim | `resolve-config.{sh,ps1} docs …` (issue #2) — read once |
 | **The `domainSkills` pointers** | the stack's best-practice sources from the driver profile | `resolve-config.{sh,ps1} keys …` (issue #2) — read once |
 | **The bounded grep results** — diff-keyed (per-change) / seed-or-broad-keyed on demand (sweep) | greps within `sourceGlobs` for the specific symbols the diff introduces — never a whole-repo scan (on the per-change path; for the opt-in sweep it is a seed/broad-keyed scan over `sourceGlobs` on demand — still bounded, still hard-grounded) | the orchestrator (diff-keyed per-change; seed/broad-keyed on demand for the sweep) |
+| **The recalled prior write-ups (advisory)** — **`review` path only** | the prior coherence write-up bodies whose recorded `<path>:<line>` grounding refs intersect the diff's touched paths — diff-keyed, then handed to the engine as advisory context (verbatim `SECTION-BEGIN … SECTION-END`-style payloads), never re-read after this point | the orchestrator (`review` skill), via `scripts/memory-mirror.{sh,ps1} --recall` — read once |
 
 This is the **same** review context the #3 engine documents under "What you
 receive" — the orchestrator builds it and hands it to the engine; the engine does
 not re-read whole docs or re-resolve the shared keys.
+
+The **recall** part applies to the **per-change `review` path only** — sweep
+recall is **not** built (a sweep receives a sweep context, **no diff**, so the
+diff-keyed match is undefined there; `docs/write-up.md` §"The deferred boundary —
+sweep recall"). On the sweep path the context stays at its four parts (the sweep
+seed in place of the diff).
 
 ## Step 2 — Produce the consolidated analysis (once)
 
@@ -369,7 +377,10 @@ slice to the route's fixed shape, validated against the
 - The review **context** — the built diff (per-change) or the sweep seed / broad
   scan with **no diff** (the opt-in sweep), plus the resolved `.project/`
   sections + `domainSkills` pointers + the bounded greps (diff-keyed per-change;
-  seed/broad-keyed over `sourceGlobs` on demand for the sweep) — is assembled
+  seed/broad-keyed over `sourceGlobs` on demand for the sweep), plus — on the
+  **`review` path only** — the **recalled prior write-ups** as an advisory fifth
+  part (diff-keyed, read once via `scripts/memory-mirror.{sh,ps1} --recall`,
+  handed to the engine as advisory context, never re-read) — is assembled
   **once** per review call.
 - The consolidated **analysis** (the #3 engine's `FINDINGS` **and** `PROPOSALS`
   blocks) is produced **once** per review call — regardless of N findings or M
