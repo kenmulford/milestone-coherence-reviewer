@@ -37,6 +37,7 @@ No other input influences where a fix lands:
 | **Finding count** | each finding routes on *its own* `severity`; ten trivial findings are ten inline fixes, not one escalation |
 | **Token budget** | a resource concern, like run length — never spills work into a milestone |
 | **Severity-as-verdict** | `severity` is a drift-*size* hint, never a Blocker/Advisory merge verdict (`agents/coherence-reviewer.md` l.105) — it routes, it does not gate |
+| **Recall / a matched prior write-up** | advisory context for the reader and the engine's derivation only; never a routing signal — it does not move where a fix lands (`docs/write-up.md` §"Recall (read-back)") |
 
 This is the load-bearing invariant: **"Coherence routes on drift size alone, so
 a long run never distorts where a fix lands."** (`BRIEF.md` l.52, l.109.)

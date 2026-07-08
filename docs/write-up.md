@@ -42,12 +42,15 @@ invariant is honest, not contradicted below:
 (This "content" scope excludes procedural status notes the write-up carries —
 a skipped mirror note (covered below in [Graceful
 degradation](#graceful-degradation--a-missing-mirror-never-blocks-the-headline)),
-plus the D17 `milestone-bootstrapper` nudge, a closed-duplicate note, and the
-deferred-boundary statement (each specified where the rendering skill emits
-it — `skills/review/SKILL.md` Step 1, Step 3, and Step 5, respectively).
-These describe the run's own mechanics, not the reviewed change, so they are
-outside this "content elements" scope, not additional non-engine-field content
-claims.)
+plus the D17 `milestone-bootstrapper` nudge, a closed-duplicate note, the
+**recall status note** (the reference to matched prior write-ups, or the
+explicit "no related prior write-ups found" — see [Recall
+(read-back)](#recall-read-back--prior-write-ups-before-re-analysis) below), and
+the deferred-boundary statement (each specified where the rendering skill emits
+it — `skills/review/SKILL.md` Step 1, Step 3, Step 4, and Step 5,
+respectively). These describe the run's own mechanics, not the reviewed change,
+so they are outside this "content elements" scope, not additional
+non-engine-field content claims.)
 
 | Write-up element | Built from (engine `FINDINGS` field) |
 | --- | --- |
@@ -325,6 +328,24 @@ crashes the caller** — it follows the same mirror-unavailable rule above and n
 suppresses the inline summary. (`BRIEF.md` l.68; memory-as-audit-trail grounded in
 `BRIEF.md` l.68, l.115.)
 
+## Recall (read-back) — prior write-ups before re-analysis
+
+Symmetric to the write path above, the `review` flow also **reads back** prior
+write-ups before re-analysis, hands the matches to the engine as **advisory
+context**, and renders a recall status note — never silence. The full mechanics
+and contract — the Step-2 gather, the Step-4 render, the diff-keyed match, the
+empty/fail-soft cases, advisory-never-gates, and the sweep-recall deferred
+boundary — are the **single source of truth in [recall.md](recall.md)**; this
+doc does **not** duplicate them.
+
+The **recall status note** is one of this write-up's procedural status notes (the
+exception list under [What the write-up renders
+from](#what-the-write-up-renders-from-no-re-derivation) above): it is exempt from
+the "renders only from engine `FINDINGS`/`PROPOSALS` fields" rule, and its
+two-branch render (reference the matched prior write-up(s), or the explicit "no
+related prior write-ups found") is specified in `docs/recall.md` §"Step 4 —
+render the recall status note (never silence)".
+
 ## Discovery — how a user first meets the write-up
 
 On the first release a user encounters the write-up by running the standalone
@@ -371,3 +392,8 @@ mirrors accrue quietly as the audit trail.
 - The **memory mirror** is detect-or-fallback (conservative detect of an
   opted-in store → else a git-invisible file under `.milestone-config/.runtime/`),
   supplemental and best-effort.
+- **Recall (read-back)**: specified in full in [recall.md](recall.md) (the single
+  source) — the `review` flow reads back prior write-ups before re-analysis and
+  hands matches to the engine as **advisory context** (never a routing/verdict
+  input); this write-up renders the resulting **recall status note** as a
+  procedural status note.

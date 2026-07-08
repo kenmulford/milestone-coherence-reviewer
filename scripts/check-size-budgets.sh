@@ -68,7 +68,20 @@ KINDS=(
 )
 CEILINGS=(
   150
-  5100
+  # skills/review/SKILL.md — ratcheted DOWN 5100 -> 5090 (v0.3.0, issue #71).
+  # Issue #71 first INLINED the recall (read-back) mechanics here, pushing the
+  # file to 5203 (`wc -w`) — over the 5100 ceiling (the red this change fixes).
+  # This change RELOCATES those mechanics to docs/recall.md (the single source),
+  # shrinking the file back to 4913 (`wc -w`). Per the shrink rule above, the
+  # ceiling drops in the same change to the new actual + ~5% headroom
+  # (4913 * 1.05 ~= 5159), capped BELOW the prior 5100 so this is a genuine
+  # lowering, not a raise: 5090 (~3.6% over 4913).
+  # NB — measure with the ubuntu CI runner's `wc`: under LC_ALL=C (set at the top
+  # of this script) GNU `wc -w` does NOT count a lone multibyte-punctuation token
+  # (a spaced em-dash / middot / ellipsis) as a word, so its count runs a few
+  # percent below a naive ASCII whitespace split (e.g. MSYS/Git-Bash `wc` reports
+  # ~5082 for the same file). The 4913 above is the GNU/CI figure the gate uses.
+  5090
   4550
 )
 
