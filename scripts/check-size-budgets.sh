@@ -68,7 +68,14 @@ KINDS=(
 )
 CEILINGS=(
   150
-  5100
+  # skills/review/SKILL.md — ratcheted DOWN 5100 -> 5090 (v0.3.0, issue #71):
+  # the recall (read-back) mechanics were relocated to docs/recall.md (single
+  # source), so SKILL.md shrank. Per the shrink rule above, the ceiling drops to
+  # the new actual + headroom in the same change. (`wc -w` on the ubuntu CI
+  # runner treats standalone multibyte-punctuation tokens as non-words, so its
+  # count runs ~3% below a naive whitespace split; 5090 keeps ~5% headroom over
+  # the CI-measured actual.)
+  5090
   4550
 )
 
