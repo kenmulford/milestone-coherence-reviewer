@@ -325,6 +325,80 @@ crashes the caller** — it follows the same mirror-unavailable rule above and n
 suppresses the inline summary. (`BRIEF.md` l.68; memory-as-audit-trail grounded in
 `BRIEF.md` l.68, l.115.)
 
+## Recall (read-back) — prior write-ups before re-analysis
+
+Symmetric to the write path above, the `review` flow also **reads back** prior
+write-ups before re-analysis — so a re-review of a change that touches the same
+code sees what an earlier run already said about it. Recall is the read half of
+the memory mirror; this section is its contract.
+
+### Where recall attaches, and how it matches
+
+**Recall runs orchestrator-side**, at the start of the `review` skill's flow —
+the `review` path **only** (see [the deferred
+boundary](#the-deferred-boundary--sweep-recall-not-built-here) below). Its
+results are **handed to** the read-only
+[coherence-reviewer](../agents/coherence-reviewer.md) engine as additional
+**advisory context**; the engine itself runs no recall script and keeps its
+read-only contract (`.project/design-philosophy.md#Layering & boundaries` l.18 —
+the read-only-engine ↔ orchestrator-acts split; `agents/coherence-reviewer.md`
+§"Read-only — what you produce and what you never do" l.61).
+
+Recall reads from the **same detect-or-fallback target the write path resolves** —
+`scripts/memory-mirror.sh` `resolve_target()` (l.102-139: the four legs —
+vault-env → vault-repo → claude-mem → the git-invisible fallback under
+`.milestone-config/.runtime/`). Read and write resolve **identically**, so recall
+always reads where the mirror wrote. It parses each prior entry's recorded
+`grounding` citation in the `<path>:<line>` form (the [What the write-up renders
+from](#what-the-write-up-renders-from-no-re-derivation) table, l.56) — from entry
+**bodies**, not headers — and surfaces any entry whose cited path intersects the
+**current diff's touched paths**. This is a **diff-keyed match**: flat cost, keyed
+only to what the change touches — the same bound the per-change review's own greps
+use (`.project/design-philosophy.md#What we optimize for` l.22).
+
+### The empty-match and fail-soft cases — never silence
+
+A resolvable, readable store that holds **no** entry touching the diff's paths
+renders an explicit **"no related prior write-ups found"** note — never silence
+(mirroring [The empty / clean-fit state — never
+silence](#the-empty--clean-fit-state--never-silence) l.219-224: absence is an
+explicit statement, never an absent output).
+
+Every thin-store failure degrades to that **same** note — the [resolution
+degradation-matrix](resolution.md#degradation-matrix-what-happens-when-grounding-is-thin)
+pattern (l.200-213): never a crash, never a block on the review or the merge
+(`.project/design-philosophy.md#Error & failure philosophy` l.35 — fail-soft /
+absence-means-skip; "Coherence heals; it never gates").
+
+| Situation | Behavior |
+| --- | --- |
+| **Absent store** — no resolvable or readable target file | render "no prior write-ups found"; continue |
+| **Empty store** — target resolves but holds no entries | render "no prior write-ups found"; continue |
+| **Unreadable or corrupt store** — target resolves but does not parse | render "no prior write-ups found"; continue |
+
+### Advisory, never gates — stated both ways
+
+A matched prior write-up is **context only**, never a verdict input:
+
+- **It never alters the review.** It does not change the engine's `FINDINGS` /
+  `PROPOSALS` blocks and never blocks the merge
+  (`.project/design-philosophy.md#Error & failure philosophy` "Coherence heals;
+  it never gates"; `docs/heal-routing.md` l.9-12).
+- **It is never fed to the router.** A recall match is **not** an input to the
+  `severity`-keyed heal-routing decision — it joins the same excluded class as
+  heal-routing's "Tempting input" table (`docs/heal-routing.md` §"The single
+  routing key — drift size, nothing else" l.25-39). Recall informs the reader; it
+  never moves where a fix lands.
+
+### The deferred boundary — sweep recall (NOT built here)
+
+This contract covers the **`review` flow's** recall only. **Sweep-mode recall is
+NOT built in this milestone** (mirroring `docs/heal-routing.md` §"The deferred
+boundary" l.266-292). A sweep run receives a **sweep context, not a diff**
+(`agents/coherence-reviewer.md` l.130), so the diff-keyed match above is
+**undefined** there — a future sweep hookup would need its own match-key
+decision. Documented, not implemented.
+
 ## Discovery — how a user first meets the write-up
 
 On the first release a user encounters the write-up by running the standalone
@@ -371,3 +445,9 @@ mirrors accrue quietly as the audit trail.
 - The **memory mirror** is detect-or-fallback (conservative detect of an
   opted-in store → else a git-invisible file under `.milestone-config/.runtime/`),
   supplemental and best-effort.
+- **Recall (read-back)**: the `review` flow reads back prior write-ups from that
+  same detect-or-fallback target before re-analysis, **diff-keyed** to the touched
+  paths, and hands matches to the engine as **advisory context** — never a
+  `FINDINGS`/`PROPOSALS` or routing input, never a merge block; an absent, empty,
+  or unreadable store degrades to an explicit "no prior write-ups found".
+  Sweep-mode recall is not built here.
