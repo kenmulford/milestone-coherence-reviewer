@@ -2,6 +2,45 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop.)
 
+## v0.4.0 — consumer-shaped spin-out issues
+
+**Theme:** spin-out issues stop imposing this plugin's house style and adopt the consumer repo's own issue-template convention — without ever inferring what an unknown field means, and without letting a template's shape gate or lengthen a finding. Shipped alongside a release-hygiene sweep that removed the hand-maintained version text and stale inventories the docs had accumulated.
+
+### ✨ Consumer-shaped spin-out issues
+
+| Issue | PR | What |
+|---|---|---|
+| #81 Compose heal-routing spin-out issues to the consumer repo's issue template | #94 | The Step 5 spin-out now shapes its body to the consumer's `.github/ISSUE_TEMPLATE/`. A **4-rung resolution ladder** (`agentIssueTemplate` profile key → exactly one template → built-in shape → absence never blocks) resolves **once per run, repo-wide**. **Three emission modes**, chosen by which rung matched — because the rung is what determines whether the template's shape is known to the suite: **A** stock/keyed translates every non-`markdown` field to `## <label>` in `body:` order; **B** consumer-owned emits the first `textarea`'s label and the built-in body under it, nothing else; **C** `.md` is used as a skeleton directly. Modes A and C mirror `milestone-feeder#331`. Mode B deliberately diverges: inferring which arbitrary field means "evidence" is the guess this engine declines everywhere else (`agents/coherence-reviewer.md:58`), and letting a consumer's field count drive body length would break the flat-cost rule at `docs/write-up.md:255`. The contract is a single source, `docs/issue-templates.md`, with a lean pointer from `skills/review/SKILL.md:187` — the `docs/heal-routing.md` pattern. |
+| — Design spec | #93 | The recorded design behind #94, in `docs/superpowers/specs/2026-07-20-template-shaped-spin-out-design.md`. Also records a defect found in the companion issues: `milestone-bootstrapper#156` provisions **two** stock templates while `milestone-feeder#331` falls back to the built-in default at **two or more**, so a bootstrapped repo would have received the stock set and then had every agent ignore it. Fixed by having `#156` record *which* template agents author to, rather than making selection a count problem. Both companion issues were commented; neither is built here. |
+
+### 🔧 Release hygiene
+
+| Issue | PR | What |
+|---|---|---|
+| #82 Bump plugin version to 0.4.0 | #89 | Minor bump (feature-additive), plus the CI-guarded `.project/conventions.md` citation that must track it. Corrects #68's acceptance criterion, which claimed the diff should touch only `plugin.json` — its own merged PR had to move the citation anyway. Demonstrated by a red→green run rather than asserted. |
+| #83 Stale-proof the hand-maintained version literals | #90 | `CHANGELOG.md`'s standing header claimed "v0.1.0 released" directly above a `## v0.3.0` section; `README.md`'s Status line opened with a version literal that would go wrong the moment `0.4.0` shipped. Both removed in favor of the `CHANGELOG.md` pointer the sentence already carried. The three parenthetical attributions — `(v0.2.0)`, `(v0.2.1)`, `(v0.3.0)` — are retained deliberately: they are historical facts about when features landed and do not drift. `README.md:59`'s "no longer" framing restated as the standing fact. |
+| #84 Refresh `.project/` inventories | #91 | `conventions.md`'s inventories and `design-philosophy.md`'s verification claim were written at v0.1.0 and never maintained: `skills/` named only `review` (sweep shipped v0.2.0), `docs/` enumerated four files of six, `scripts/` claimed all twins when three are CI-only bash, `.github/` was absent, and §"Test patterns" asserted "None" while `check-size-budgets.test.sh` runs in CI. All reconciled. `docs/` is now **described rather than enumerated** — the enumeration is what drifted, twice. This matters beyond tidiness: the engine grounds its findings in resolved `.project/` sections, so a stale inventory made the reviewer judge changes against a v0.1.0 picture of its own codebase. |
+| #85 Reconcile `feeder.json` sourceGlobs with `driver.json` | #92 | `driver.json` was broadened in v0.2.1 (#39); `feeder.json` was missed and still carried the original three globs. Both now resolve to the same set. The dead `hooks/**` glob — which matched nothing, exactly as `BRIEF.md:102` predicted — is removed from both. Live drift, not theoretical: `sourceGlobs` scopes a coherence review's grep surface. |
+
+### Consumer notes (upgrading from v0.3.0)
+
+- **New behavior on the spin-out path:** heal-routing issues filed into your repo now adopt your `.github/ISSUE_TEMPLATE/` convention when one is resolvable. If you have no templates, two or more with no `agentIssueTemplate` key, an unreadable or unparseable template, or a template with no `textarea`, you get **exactly today's shape** — every degradation row terminates at the built-in shape.
+- **The `grounding` ref is verbatim on every path**, regardless of template shape. No template condition can drop it, and none can prevent a spin-out from being created — coherence still never gates.
+- **New optional profile key** — `agentIssueTemplate` in `.milestone-config/driver.json`, naming the template agents should author to. **Unset is fully supported** and falls through to the count-based rung. It becomes useful once `milestone-bootstrapper#156` begins writing it; nothing here depends on that landing.
+- **New contract doc** — `docs/issue-templates.md`. `skills/review/SKILL.md` carries a pointer, no copy.
+- **Sweep is unchanged** — this is the `review` path only.
+- **No schema changes** to `.milestone-config/driver.json` beyond the optional key above — no key is required, and no existing key changed meaning.
+- ⚠️ `skills/review/SKILL.md` now sits at **5086/5090 words**. The next change touching it must relocate content, not add it.
+
+### ⚖️ Post-run audit trail
+
+Judgment-call PRs for this release: **#91**, **#94**
+
+- **#91** edited `.project/design-philosophy.md`, whose own header states *"Humans own this file; tools may propose changes but never rewrite it."* Triage downgraded this to Advisory on precedent — #65 / `1c35821` made an ordinary docs-accuracy edit to the same file through the same pipeline. The edit is one line, factual correction only. **Worth a human confirming the precedent holds.**
+- **#94** removed two clauses from `skills/review/SKILL.md:187` to buy the pointer's words. Both were verbatim duplicates of `docs/heal-routing.md` content the same sentence already cites, and `heal-routing.md:121-122` declares itself the single copy of that logic — so the duplicates were themselves drift. Rejected alternative: compressing an unrelated paragraph.
+
+Also of note: **#83 was rewritten mid-run.** Its original findings were authored against a checkout 7 commits behind `origin/develop` and were largely already fixed by PR #79; three of its five findings described problems that did not exist. Triage caught it, the issue was rewritten against verified state and re-triaged clean before building. **#86** (a CHANGELOG-authoring issue) was closed not-planned at triage — all three precedents it cited as convention turned out to be orchestrator-authored doc PRs, never milestone issues, and `solve-milestone` Step 6 already automates the task.
+
 ## v0.3.0 — readable coherence memory (recall before re-analysis)
 
 **Theme:** the write-only memory mirror gains its read half. Before analyzing a change, the reviewer recalls prior coherence write-ups whose grounding touches the same files and reuses or references them instead of re-deriving findings from scratch — advisory-only, diff-keyed, and fail-soft. No second store; the existing `memory-mirror` target gains a read path.
