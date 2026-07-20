@@ -27,7 +27,7 @@ with [heal-routing](heal-routing.md) (the route table) and [recall](recall.md)
 
 The **built-in shape** is what the spin-out emits today: the finding's
 `description` + `symbol`, plus its single `grounding` ref, verbatim
-(`skills/review/SKILL.md:187`; the finding's fields are
+(`skills/review/SKILL.md` §"Step 5"; the finding's fields are
 `agents/coherence-reviewer.md:93-97`). Every rung, mode, and degradation row
 below either shapes that content into a template or falls back to it unchanged.
 
@@ -125,7 +125,7 @@ Acceptance criteria → detail. A finding carries `description`, `symbol`, `lens
 | --- | --- | --- |
 | Summary | `description` + `symbol` | one plain sentence naming the change |
 | Impact | `lens` | the why — what it diverges from |
-| Proposed solution | the redo one-liner's scoped ask (`skills/review/SKILL.md:158`) | what to do differently |
+| Proposed solution | the redo one-liner's scoped ask (`skills/review/SKILL.md` §"Step 4") | what to do differently |
 | Non-goals | a **truthful constant** | *"None — filed from a single coherence finding and carrying no scope beyond it."* |
 | Acceptance criteria | **derived — one checkbox** | `- [ ] <symbol> follows the pattern at <grounding>` |
 | detail | the `grounding` ref, **verbatim** | never a paraphrase (`docs/write-up.md:107`) |
@@ -222,7 +222,7 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
   rule (`docs/write-up.md`) — unchanged.
 - **The drop-if-ungroundable inversion** (`agents/coherence-reviewer.md:58`) —
   deliberate, stays.
-- **The `chore/propose-*` conventions-PR lane** (`skills/review/SKILL.md:130`) —
+- **The `chore/propose-*` conventions-PR lane** (`skills/review/SKILL.md` §"Step 3") —
   a separate lane; a proposal's config-only PR is not an issue and is not shaped
   here.
 - **Heal routing itself** — which finding takes which route, and whether the new
