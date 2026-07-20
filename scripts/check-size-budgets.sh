@@ -68,21 +68,39 @@ KINDS=(
 )
 CEILINGS=(
   150
-  # skills/review/SKILL.md — ratcheted DOWN 5100 -> 5090 (v0.3.0, issue #71).
-  # Issue #71 first INLINED the recall (read-back) mechanics here, pushing the
-  # file to 5203 (`wc -w`) — over the 5100 ceiling (the red this change fixes).
-  # This change RELOCATES those mechanics to docs/recall.md (the single source),
-  # shrinking the file back to 4913 (`wc -w`). Per the shrink rule above, the
-  # ceiling drops in the same change to the new actual + ~5% headroom
-  # (4913 * 1.05 ~= 5159), capped BELOW the prior 5100 so this is a genuine
-  # lowering, not a raise: 5090 (~3.6% over 4913).
+  # skills/review/SKILL.md — ratcheted DOWN 5090 -> 4100.
+  # History: 5100 -> 5090 (v0.3.0, issue #71). Issue #71 first INLINED the recall
+  # mechanics here, pushing the file to 5203 and over the 5100 ceiling; relocating
+  # them to docs/recall.md shrank it to 4913 (GNU), and the ceiling dropped in the
+  # same change to 4913*1.05 ~= 5159, CAPPED BELOW the prior 5100 -> 5090. That
+  # cap is the only worked precedent for the shrink rule's "never a raise" clause,
+  # so it is kept here rather than left to git archaeology.
+  # This drop follows the same pattern at larger scale: the file reached 5086
+  # (MSYS `wc`) with 4 words of headroom, and three
+  # changes brought it to 4021 — (1) issue-templates.md citations re-anchored by
+  # section, (2) the duplicated `## Invariants` section folded into
+  # `## Non-negotiables`, (3) Step 3's proposal-PR machinery relocated to
+  # docs/proposal-pr.md (the single source, also consumed by sweep).
   # NB — measure with the ubuntu CI runner's `wc`: under LC_ALL=C (set at the top
   # of this script) GNU `wc -w` does NOT count a lone multibyte-punctuation token
   # (a spaced em-dash / middot / ellipsis) as a word, so its count runs a few
-  # percent below a naive ASCII whitespace split (e.g. MSYS/Git-Bash `wc` reports
-  # ~5082 for the same file). The 4913 above is the GNU/CI figure the gate uses.
-  5090
-  4550
+  # percent below a naive ASCII whitespace split. Precedent from the v0.3.0
+  # ratchet: 4913 (GNU/CI) vs ~5082 (MSYS) for the same file, ~3.4%. NOTE the
+  # local shell is NOT a proxy — Git-Bash's `wc` self-reports as GNU coreutils
+  # but is built without glibc's locale data and counts the em-dash regardless of
+  # LC_ALL; only genuine glibc drops it.
+  # Measured for THIS ratchet against real glibc GNU wc: review 3882, sweep 3971
+  # (vs 4021 / 4112 under MSYS — a 3.46% / 3.43% gap, matching the precedent).
+  # Ceilings follow the +~5%-rounded rule on the CI figure: 3882*1.05 ~= 4076 ->
+  # 4100, and 3971*1.05 ~= 4170 -> 4200. Both are far below the prior ceilings,
+  # so this is a genuine lowering. CI's count is always the LOWER of the two, so
+  # a green local run cannot go red in CI — local is the tighter gate here.
+  4100
+  # skills/sweep/SKILL.md — ratcheted DOWN 4550 -> 4200. Same change: sweep
+  # carried a ~250-word restatement of review's Step 3 while its own text called
+  # that a reference "not a re-implementation"; relocating to docs/proposal-pr.md
+  # took it 4312 -> 4112.
+  4200
 )
 
 # Length-parity guard: FILES/KINDS/CEILINGS are hand-edited parallel arrays

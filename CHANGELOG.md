@@ -30,7 +30,7 @@ Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (B
 - **New contract doc** — `docs/issue-templates.md`. `skills/review/SKILL.md` carries a pointer, no copy.
 - **Sweep is unchanged** — this is the `review` path only.
 - **No schema changes** to `.milestone-config/driver.json` beyond the optional key above — no key is required, and no existing key changed meaning.
-- ⚠️ `skills/review/SKILL.md` now sits at **5086/5090 words**. The next change touching it must relocate content, not add it.
+- **Two skills got materially smaller.** `skills/review/SKILL.md` briefly sat at 5086/5090 — four words of headroom — before a condensation pass took it to **4021**, and `skills/sweep/SKILL.md` to **4112**. The `## Invariants` section was folded into `## Non-negotiables` (it was the same list written twice, one heading byte-identical in both), and Step 3's proposal-PR machinery moved to a new single source, **`docs/proposal-pr.md`**, which `sweep` now shares instead of restating. Ceilings ratcheted down to 4100 / 4200 accordingly.
 
 ### ⚖️ Post-run audit trail
 
