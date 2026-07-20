@@ -4,6 +4,8 @@
 # (driver.json, feeder.json) is intentionally NOT listed, so it stays tracked.
 preflight-notice
 trello-notice
+code-review-gate-notice
+parallel-default-notice
 triage-cache.json
 tests-stamp
 .runtime/
