@@ -15,17 +15,18 @@ Files, types, functions, tests, branches.
 ## File & folder layout
 Where things go, and the shape of a feature.
 > - `.claude-plugin/` — `plugin.json` (version source of truth) + the plugin's own `marketplace.json`.
-> - `skills/` — the `review` entry point (the orchestrator).
+> - `skills/` — the two entry points: `review` (the per-change orchestrator) and `sweep` (the opt-in app-wide scan).
 > - `agents/` — the read-only review engine (`coherence-reviewer.md`).
-> - `docs/` — the contracts: `resolution.md`, `analyze-once.md`, `write-up.md`, `heal-routing.md`.
-> - `scripts/` — the bash/pwsh twins.
+> - `docs/` — the contracts: one contract topic per file (`docs/<topic>.md`), plus the validation records for a dogfood run. Read the directory for the current set; a hand-maintained list here is what drifts.
+> - `scripts/` — two kinds. The **cross-platform twins** consumed at run time, sharing a basename across hosts (`resolve-config.{sh,ps1}`, `memory-mirror.{sh,ps1}`); and the **CI-only bash checkers**, deliberately without a pwsh twin because only the ubuntu-latest CI job consumes them (`check-version-citation.sh`, `check-size-budgets.sh`, `check-size-budgets.test.sh` — rationale at `scripts/check-size-budgets.sh:46-48`, "No pwsh twin").
+> - `.github/` — `workflows/ci.yml` (the CI gates; see §"Test patterns") and the golden-case fixtures its checker's test runner reads, one directory per case under `workflows/fixtures/size-budgets/`.
 > - `.milestone-config/` — the shared driver/feeder config, read in place.
 >
-> (Repo tree; CHANGELOG.md v0.1.0 issue→PR table.)
+> (Repo tree.)
 
 ## Test patterns
 Where tests live, how they're named, fixtures/factories, and what a good test looks like.
-> **None** — no unit-test suite or test directory (this is a markdown + shell plugin). Correctness is established by documented-contract conformance, `/code-review` per PR, and verified byte-for-byte bash/pwsh script parity. (CHANGELOG.md v0.1.0 — "built via the feeder→driver dogfood loop"; the repo tree has no `tests/` dir or test runner.)
+> **No application unit-test suite** and no `tests/` directory (this is a markdown + shell plugin). Correctness is established by four things: documented-contract conformance; `/code-review` per PR; verified byte-for-byte bash/pwsh script parity for the cross-platform twins; and the two CI gates, `version-citation-check` and `size-budgets` (`.github/workflows/ci.yml:32`, `.github/workflows/ci.yml:47`). The size-budgets gate is itself self-tested — `scripts/check-size-budgets.test.sh` runs a case table of golden-case fixtures under `.github/workflows/fixtures/size-budgets/`, and CI runs it ahead of the checker it covers (`.github/workflows/ci.yml:53-54`). (Repo tree; `scripts/check-size-budgets.test.sh` header comment.)
 
 ## Canonical exemplars (mirror these)
 The reference implementations to copy when building something similar. Point at real code.
