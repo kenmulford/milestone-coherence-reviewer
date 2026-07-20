@@ -56,7 +56,7 @@ To scan the whole app for standing inconsistency — not just one change — run
 
 ## Requires
 
-`superpowers` (from `claude-plugins-official`) — the milestone-suite's shared prerequisite. It's no longer installed automatically, so add it yourself; the `milestone-driver` and `milestone-feeder` tools that drive and feed this reviewer need it to run the suite.
+`superpowers` (from `claude-plugins-official`) — the milestone-suite's shared prerequisite. It is not installed automatically, so add it yourself; the `milestone-driver` and `milestone-feeder` tools that drive and feed this reviewer need it to run the suite.
 
 ```
 /plugin marketplace add anthropics/claude-plugins-official
@@ -67,4 +67,4 @@ If Claude Desktop shows `"Unknown command"` for this plugin's own commands, that
 
 ## Status
 
-v0.3.0 — built and released. `review` and the opt-in app-wide `sweep` both work, along with inline healing, issue/milestone routing for larger drift, human-gated `.project/conventions.md` rule proposals (v0.2.0), a mechanical grounding-verify pass (v0.2.1), and recall of prior write-ups on the same files as advisory context before re-analyzing (v0.3.0). For the full version history, see [CHANGELOG.md](CHANGELOG.md). Spec in [BRIEF.md](BRIEF.md); built by `milestone-feeder` + `milestone-driver`. Part of the [milestone-suite](https://github.com/kenmulford/milestone-suite) dev-tools suite.
+Built and released. `review` and the opt-in app-wide `sweep` both work, along with inline healing, issue/milestone routing for larger drift, human-gated `.project/conventions.md` rule proposals (v0.2.0), a mechanical grounding-verify pass (v0.2.1), and recall of prior write-ups on the same files as advisory context before re-analyzing (v0.3.0). For the full version history, see [CHANGELOG.md](CHANGELOG.md). Spec in [BRIEF.md](BRIEF.md); built by `milestone-feeder` + `milestone-driver`. Part of the [milestone-suite](https://github.com/kenmulford/milestone-suite) dev-tools suite.
