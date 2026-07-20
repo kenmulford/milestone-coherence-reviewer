@@ -1,4 +1,4 @@
 {
-  "sourceGlobs": ["skills/**", "agents/**", "hooks/**"],
+  "sourceGlobs": ["skills/**", "agents/**", ".claude-plugin/**", "docs/**", "scripts/**"],
   "versioning": "semver"
 }
