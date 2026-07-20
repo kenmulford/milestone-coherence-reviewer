@@ -1,5 +1,13 @@
 {
   "integrationBranch": "develop",
   "protectedBranch": "main",
-  "sourceGlobs": ["skills/**", "agents/**", "hooks/**", ".claude-plugin/**", "docs/**", "scripts/**"]
+  "sourceGlobs": [
+    "skills/**",
+    "agents/**",
+    ".claude-plugin/**",
+    "docs/**",
+    "scripts/**"
+  ],
+  "parallel": true,
+  "maxParallelWorkers": 8
 }
