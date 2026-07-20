@@ -117,36 +117,9 @@ terminal, above) skips this step entirely — no drop-count line is rendered.
 
 ### Step 3 — Author each convention proposal as a config-only PR (the PROPOSALS lane — separate from drift routing)
 
-The engine's `PROPOSALS` block is a **separate lane** from the drift-size routing (Step 5): a proposal is **not** a drift fix, so it does **not** go through drift-size heal routing (`docs/heal-routing.md` §"Convention proposals are a separate lane"). Where the drift router (Step 5) routes findings by `severity`, a proposal routes to a **config-only PR** — independent of the drift buckets. This step runs **before** the write-up (Step 4) by design, so each proposal's PR is already live when Step 4 renders its link — the numbered order matches the data dependency (no step renders an artifact a later step produces). `PROPOSALS: none` → skip this step entirely (nothing to author). For each proposal, the **orchestrator** (not the read-only engine) authors the entry and opens the PR:
+The engine's `PROPOSALS` block is a **separate lane** from drift-size routing (Step 5): a proposal is **not** a drift fix and never enters the severity buckets (`docs/heal-routing.md` §"Convention proposals are a separate lane"). The **orchestrator** authors the entry and opens the PR — the read-only engine returns the proposal and acts on nothing. `PROPOSALS: none` → skip this step entirely. This step runs **before** the write-up (Step 4) by design, so each proposal's PR is already live when Step 4 renders its link.
 
-1. **Suppress on a degraded repo — do NOT propose against inferred conventions (decided BEFORE any render).** If `.project/conventions.md` is absent (`SIGNAL no-doc-grounding` from Step 1), **suppress every proposal** and surface the one-time **D17** `milestone-bootstrapper` nudge (Step 1.4) instead — never flood proposals against conventions the tool merely inferred (`BRIEF.md` l.96, l.119). A proposal needs a real `conventions.md` to extend. This suppression is decided here at Step 3, before Step 4 renders anything, so the write-up never renders a proposal that gets suppressed.
-
-2. **Dedupe before opening — match deterministically, never fuzzily.** Skip the proposal when **an open PR on the exact head branch `chore/propose-<slug>` already exists** (`gh pr list --state open --head "chore/propose-<slug>" --json number`, or `git ls-remote --heads origin "chore/propose-<slug>"`) **OR** `.project/conventions.md` **already carries that `## heading`** (an exact-heading scan). Match on the exact head branch and the exact heading — **never** a fuzzy full-text `--search`, which false-positives on an unrelated PR that merely mentions the slug and misses a reworded duplicate. The engine may hint at a likely duplicate; the orchestrator enforces the dedupe (`agents/coherence-reviewer.md` §"Convention proposals" — Suppress).
-
-3. **Write the entry + open the config-only PR (act → verify → retry-once → post-create-verify → dedupe-recheck).** For each surviving proposal:
-
-   | Step | How |
-   |---|---|
-   | cut the branch | `chore/propose-<slug>` off `integrationBranch` — `<slug>` is the kebab-cased `heading`; **never** off `protectedBranch` |
-   | write the entry | append to `.project/conventions.md`, mirroring the existing shape (`.project/conventions.md` header comment): a stable `## <heading>` + a `> <rule>` blockquote + the `exemplar` `path:line`; optionally a row in the "Canonical exemplars" table. When `disagree: yes`, the `rule` recommends the grounded winner and the entry notes the `diverging` sites |
-   | commit | Conventional Commits with the PR-number suffix — e.g. `chore: propose conventions.md#<heading> (#<pr>)` (`.project/conventions.md#"Commits & PRs"`) |
-   | open the PR — **attempt** | `gh pr create --base <integrationBranch> …` — a **config-only PR to `integrationBranch`**, **NEVER** `protectedBranch` |
-   | **verify** the attempt | `gh pr view <branch> --json number` (the same `gh pr view … --json` pattern already used for PR resolution earlier in this file) — confirm the PR now exists |
-   | on a **failed** attempt (verify finds no PR) | run `gh auth status` (surfaces an auth problem rather than masking it), then **retry the create exactly once**, then verify again — the retry budget is exactly one extra attempt, **never** an unbounded loop |
-
-   On a **verified-successful create** (whether from the first attempt or the retry), run a **post-create content verify** before treating it as live — confirm the created PR's diff touches **exactly** `.project/conventions.md` and carries the expected `## <heading>` (the same entry shape as the "write the entry" row above):
-
-   | Content-verify outcome | What happens |
-   |---|---|
-   | verified, no duplicate | treat this PR as the proposal's **live link** — the happy path |
-   | verified, but a **duplicate** is found (a second open PR now exists on the exact head branch `chore/propose-<slug>`, OR `.project/conventions.md` already carries that exact `## heading`) | re-run the **same** dedupe match from item 2 above (never a new or fuzzy rule) to confirm. The **earlier-existing** PR is authoritative — close this run's just-created PR (`gh pr close <this-run's-PR-number>` with a short comment noting it duplicates the earlier PR) and render a note about the closed duplicate in place of a second link — **never** two rendered links |
-   | content verify fails for a **non-duplicate** reason (diff doesn't touch exactly `.project/conventions.md`, or lacks the expected heading, and it is not a duplicate) | fall back to item 4's skipped-and-noted path below — this repo's fail-soft / absence-means-skip convention (`.project/design-philosophy.md#Error & failure philosophy`): surface it, never a crash, never silently treat the malformed PR as the live link |
-
-   If the retry **also** fails (verify still finds no PR after the retry) → fall back to item 4's skipped-and-noted path below, exactly as today — no crash, no unbounded retry loop.
-
-   The human **merges to accept**, **closes to reject** the surviving, verified PR. These PRs are opened **here (Step 3), before the write-up renders (Step 4)**, so the Proposed convention section (Step 4, item 2) names each surviving proposal with its **live PR link** — or, when a race closed this run's duplicate, the note about the closed duplicate in its place.
-
-4. **Best-effort — a failure is skipped-and-noted, never a crash or a gate.** This is the shared terminal fallback for all three failure classes: (a) a branch-cut, write-the-entry, or commit failure (auth, network, a protected `.project/` path — existing, no retry applies to these pre-create steps), (b) a `gh pr create` that fails on both the initial attempt and the retry (new), and (c) a non-duplicate post-create content-verify failure (new). Each is **skipped and noted**, exactly like the write-up's mirror-degradation pattern (Step 4; `docs/write-up.md` §"Graceful degradation") — it never crashes the run and never gates the merge (`BRIEF.md` l.89). Step 4 then renders the skipped-and-noted failure in place of that proposal's PR link. The change under review merges regardless.
+**The authoring machinery lives in `docs/proposal-pr.md` alone** — this skill carries no copy. See it for the degraded-repo suppression, the deterministic dedupe, the act→verify→retry-once→post-create-verify→dedupe-recheck sequence, and the skipped-and-noted fallback.
 
 ### Step 4 — Render the write-up (#5): inline PRIMARY, then the supplemental mirrors
 

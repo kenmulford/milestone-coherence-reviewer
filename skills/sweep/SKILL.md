@@ -139,13 +139,9 @@ entirely — no drop-count line.
 
 ### Step 3 — Author each convention proposal as a config-only PR (the PROPOSALS lane)
 
-Author each proposal as a config-only PR **exactly as `skills/review/SKILL.md` Step 3 does** — this is a genuine reference to that step's machinery, not a re-implementation. For each surviving `PROPOSALS` entry, do what `review` Step 3 does:
+**The authoring machinery lives in `docs/proposal-pr.md` alone** — this skill carries no copy, and neither does `review`. Suppress-on-degraded-repo, the deterministic dedupe, the create-and-verify sequence, and the skipped-and-noted fallback are all defined there.
 
-- the **SAME dedupe** — skip when an open `chore/propose-<slug>` PR already exists (`gh pr list --state open --head "chore/propose-<slug>" --json number`, or the `git ls-remote --heads origin "chore/propose-<slug>"` fallback) **or** `.project/conventions.md` already carries that `## heading` (an exact-heading scan) — matching the exact head branch and the exact heading, **never** a fuzzy `--search`;
-- the **SAME suppress-on-degraded-repo step, decided BEFORE any render** — if `.project/conventions.md` is absent (`SIGNAL no-doc-grounding`), suppress every proposal and raise the one-time D17 nudge instead, never proposing against inferred conventions (`BRIEF.md` l.96, l.119); decided here at Step 3 so Step 4 never renders a proposal that then gets suppressed;
-- the **SAME `chore/propose-<slug>` branch** cut off `integrationBranch` (**never** the protected branch), the `## <heading>` + `> <rule>` + `exemplar` entry (a `disagree: yes` entry recommends the grounded winner and notes the `diverging` sites), the **SAME `.project/conventions.md#"Commits & PRs"`** commit convention (Conventional Commits + the PR-number suffix), and `gh pr create --base <integrationBranch>` — a config-only PR to `integrationBranch`, **never** `protectedBranch`. The human **merges to accept, closes to reject**.
-
-The **ONLY** sweep delta: in sweep-mode these proposals carry `source: sweep` (where `review` Step 3 handles `source: per-change`) — everything else is `review` Step 3's machinery, unchanged. A branch-cut / PR-open failure is **skipped-and-noted**, never a crash or a gate. This step runs **before** Step 4 so each PR link is live when the write-up renders. `PROPOSALS: none` → skip this step entirely.
+The **ONLY** sweep delta: in sweep-mode a proposal carries `source: sweep`, where `review` carries `source: per-change` (`docs/proposal-pr.md` §"The sweep delta"). `PROPOSALS: none` → skip this step entirely. Runs **before** Step 4 so each PR link is live when the write-up renders.
 
 ### Step 4 — Render the write-up (#5): the cluster report
 
