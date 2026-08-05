@@ -28,7 +28,20 @@
 #       into the issue's absence-means-skip contract (BRIEF.md l.89). A `[TBD]`
 #       section body is likewise skipped, not returned.
 #
-# OUTPUT — a deterministic, line-oriented, TAB-separated record stream (the suite
+#   resolve-config.sh cite FILE_PATH ANCHOR_TEXT
+#       Resolve an anchor-carrying citation — `path (anchor)`, the form defined in
+#       milestone-driver/skills/citation-format.md §"D1 — the `path (anchor)`
+#       form" — via the INSTALLED milestone-driver's `resolve-citation` primitive,
+#       located by the SAME ladder read-doc-section uses and never reimplemented
+#       (issue #105). Feeds the Step 2.5 grounding-verification tier-2 re-check
+#       (docs/analyze-once.md §"Tier 2 — one bounded live re-check").
+#       PASS-THROUGH, not a record stream: the primitive's stdout, its stderr and
+#       its exit code are relayed UNCHANGED — no reformatting, no filtering, no
+#       interpretation. This is the ONE subcommand that emits no record stream and
+#       no SUMMARY, because the caller's check IS the primitive's own verdict.
+#
+# OUTPUT (keys + docs; `cite` relays the primitive verbatim, see above) — a
+# deterministic, line-oriented, TAB-separated record stream (the suite
 # convention; see ci-preflight-steps.sh). The caller parses once, distributes
 # slices. Records:
 #   KEY     <name>\t<value>                a resolved shared-key value. An array
@@ -54,12 +67,18 @@
 #                                          crashes the run. Also written to stderr.
 #   SUMMARY keys=<N>\tsections=<M>\tskipped=<K>\tsignals=<S>\terrors=<E>   (last).
 #
-# Exit codes: 0 = ran (incl. clean degradation). 2 = bad usage. 3 = a malformed
-#   config was surfaced (the run continues; the nonzero lets the caller notice
-#   the ERROR record without parsing). A malformed config is the ONE config
-#   condition surfaced as an error rather than skipped — a present-but-invalid
-#   file is a real fault, distinct from an absent file's expected degradation
-#   (BRIEF.md l.96; §Constraints l.129).
+# Exit codes (keys + docs): 0 = ran (incl. clean degradation). 2 = bad usage.
+#   3 = a malformed config was surfaced (the run continues; the nonzero lets the
+#   caller notice the ERROR record without parsing). A malformed config is the ONE
+#   config condition surfaced as an error rather than skipped — a present-but-
+#   invalid file is a real fault, distinct from an absent file's expected
+#   degradation (BRIEF.md l.96; §Constraints l.129).
+# Exit codes (cite) — the primitive's own, relayed: 0 = at least one match ·
+#   1 = anchor not found, or the file is missing/unreadable · 2 = bad usage. The
+#   primitive being UNLOCATABLE also exits 1, with the reason on stderr: the
+#   caller treats "cannot locate" exactly like "did not resolve", so grounding
+#   degrades and is reported — never a crash, never a merge block
+#   (.project/design-philosophy.md#Error & failure philosophy).
 #
 # Dependency: jq, for the config reads only — the suite's blessed JSON tool
 #   ("the cross-platform nonNegotiable already permits it", render-daemon.sh:57;
@@ -123,6 +142,7 @@ encode_value() {
 usage() {
   err "usage: $PROG keys [REPO_ROOT]"
   err "       $PROG docs [REPO_ROOT] [PROJECT_DOCS_ROOT] -- DOC#ANCHOR [DOC#ANCHOR ...]"
+  err "       $PROG cite FILE_PATH ANCHOR_TEXT"
   exit 2
 }
 
@@ -196,12 +216,20 @@ cmd_keys() {
 }
 
 # ----------------------------------------------------------------------------
-# Locate the INSTALLED milestone-driver's read-doc-section primitive.
-# Most-robust-first; degrades to empty (caller treats every section as
-# unresolvable -> absence-means-skip). We do NOT reimplement the primitive.
+# Locate an INSTALLED milestone-driver primitive, by script basename ($1).
+# Most-robust-first; degrades to empty (the caller degrades instead of crashing:
+# a section becomes absence-means-skip, a `cite` becomes a tier-2 failure). We do
+# NOT reimplement the primitive.
+#
+# ONE ladder, two named entry points below (issue #105). A second copy of the
+# ladder for resolve-citation would be a duplicated helper free to drift from
+# this one — the exact shape .project/library-manifest.md#Avoid / banned bars,
+# and four copies across the twins is what a future ladder fix would have to
+# chase. Parameterizing by basename is also what makes "the SAME ladder" literal
+# rather than a claim.
 # ----------------------------------------------------------------------------
-locate_read_doc_section() {
-  local cand plugins_root
+locate_driver_script() {
+  local leaf="$1" cand plugins_root
 
   # (1) Co-installed sibling via CLAUDE_PLUGIN_ROOT. That var is THIS plugin's
   #     own versioned install dir: <plugins>/cache/<marketplace>/<plugin>/<ver>.
@@ -211,7 +239,7 @@ locate_read_doc_section() {
   #     2). Pick the highest SemVer dir with sort -V.
   if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
     local market_dir; market_dir="$(dirname "$(dirname "$CLAUDE_PLUGIN_ROOT")")"
-    cand="$(ls -d "$market_dir"/milestone-driver/*/scripts/read-doc-section.sh 2>/dev/null | sort -V | tail -1)"
+    cand="$(ls -d "$market_dir"/milestone-driver/*/scripts/"$leaf" 2>/dev/null | sort -V | tail -1)"
     [ -n "$cand" ] && [ -f "$cand" ] && { printf '%s' "$cand"; return 0; }
   fi
 
@@ -224,17 +252,25 @@ locate_read_doc_section() {
   if [ -f "$manifest" ] && command -v jq >/dev/null 2>&1; then
     local ip
     ip="$(jq -r '.plugins["milestone-driver@milestone-suite"] // [] | .[0].installPath // empty' "$manifest" 2>/dev/null)"
-    if [ -n "$ip" ] && [ -f "$ip/scripts/read-doc-section.sh" ]; then
-      printf '%s' "$ip/scripts/read-doc-section.sh"; return 0
+    if [ -n "$ip" ] && [ -f "$ip/scripts/$leaf" ]; then
+      printf '%s' "$ip/scripts/$leaf"; return 0
     fi
   fi
 
   # (3) Glob the cache, highest version wins.
-  cand="$(ls -d "$plugins_root"/cache/milestone-suite/milestone-driver/*/scripts/read-doc-section.sh 2>/dev/null | sort -V | tail -1)"
+  cand="$(ls -d "$plugins_root"/cache/milestone-suite/milestone-driver/*/scripts/"$leaf" 2>/dev/null | sort -V | tail -1)"
   [ -n "$cand" ] && [ -f "$cand" ] && { printf '%s' "$cand"; return 0; }
 
   printf ''
 }
+
+# The `.project/` section primitive — the docs subcommand's reader.
+locate_read_doc_section() { locate_driver_script read-doc-section.sh; }
+
+# The `path (anchor)` citation primitive — the cite subcommand's resolver.
+# Shipped in milestone-driver v1.19.0; a driver older than that resolves to empty
+# here, which is the same clean degradation as an absent driver.
+locate_resolve_citation() { locate_driver_script resolve-citation.sh; }
 
 # ----------------------------------------------------------------------------
 # docs subcommand
@@ -366,6 +402,33 @@ EOF_BODY
 }
 
 # ----------------------------------------------------------------------------
+# cite subcommand
+# ----------------------------------------------------------------------------
+cmd_cite() {
+  [ "$#" -eq 2 ] || { err "$PROG: cite: expected exactly 2 args: FILE_PATH ANCHOR_TEXT"; usage; }
+  local file="$1" anchor="$2"
+
+  # Locate once, via the shared ladder. Unlocatable -> exit 1 with the reason on
+  # stderr, which is the primitive's own not-found code: the caller's tier-2 check
+  # reads "cannot locate" and "did not resolve" identically, so no caller has to
+  # special-case a degraded install (docs/analyze-once.md §"Tier 2 …";
+  # .project/design-philosophy.md#Error & failure philosophy).
+  local resolver; resolver="$(locate_resolve_citation)"
+  if [ -z "$resolver" ]; then
+    err "$PROG: cite: resolve-citation primitive not found (milestone-driver v1.19.0+): $file ($anchor)"
+    return 1
+  fi
+
+  # PASS-THROUGH. stdout and stderr are INHERITED — not captured and re-emitted —
+  # so the primitive's bytes reach the caller exactly as it wrote them, and the
+  # .ps1 twin's Process launch does the same. No arg validation beyond the count:
+  # an empty anchor is the primitive's own exit-2 usage error, and re-deciding it
+  # here would be a second copy of a contract that already has one owner.
+  bash "$resolver" "$file" "$anchor"
+  return $?
+}
+
+# ----------------------------------------------------------------------------
 # dispatch
 # ----------------------------------------------------------------------------
 [ "$#" -ge 1 ] || usage
@@ -373,6 +436,7 @@ SUB="$1"; shift
 case "$SUB" in
   keys) cmd_keys "$@" ;;
   docs) cmd_docs "$@" ;;
+  cite) cmd_cite "$@" ;;
   -h|--help|help) usage ;;
   *) err "$PROG: unknown subcommand: $SUB"; usage ;;
 esac
