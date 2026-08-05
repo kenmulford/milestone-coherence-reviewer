@@ -2,6 +2,35 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop.)
 
+## v0.5.0 — adopt the `path (anchor)` citation form
+
+**Theme:** a citation pinned to a line number is invalidated by any edit landing above it, silently. This release changes both sides of that in this plugin: the engine's return-block slots now offer an anchor form keyed to a literal string, the exemplar a proposal PR writes into `.project/conventions.md` may carry one, a composed issue body may not truncate one away, and the Step 2.5 grounding check resolves one through the driver's shipped resolver instead of an in-range line read that could not detect the drift it existed to catch. The format and the resolver shipped in `milestone-driver` v1.19.0 and are cited here, never re-derived and never reimplemented.
+
+### ✨ Anchor-form citations
+
+| Issue | PR | What |
+|---|---|---|
+| #102 Offer `path (anchor)` at the coherence engine's five return-block citation slots | #110 | `<path> (<anchor>)` added as an offered option at all five citation-carrying slots — FINDINGS `grounding`, and PROPOSALS `exemplar` / `sites` / `diverging` / `grounding`. Nothing removed, deprecated, or made mandatory: `<path>:<line>` stays valid and unmarked everywhere, and `.project/<doc>#<section>` is byte-identical in both `grounding` enums. The four forms are **pointed at, never restated** — a local copy is a second source that drifts (`milestone-driver/skills/citation-format.md § The four forms`). Also carries the `0.5.0` bump and the `.project/conventions.md#Versioning` citation the `check-version-citation` gate holds to it. |
+| #104 Allow the `exemplar` in a `.project/conventions.md` entry to carry an anchor | #112 | One row of `docs/proposal-pr.md`. The anchor form is **preferred** here — a conventions entry outlives the line its exemplar sits on today — but never required. Closes a disagreement #102 opened: the engine's `exemplar` slot began offering the anchor form while the row it points at still admitted only `path:line`. The preference wording is mirrored verbatim from `agents/coherence-reviewer.md` so the two ends provably agree rather than approximately agree. |
+| #105 Resolve anchor-carrying groundings at Step 2.5 via the driver's shipped resolver | #114 | Replaces the one mechanical citation check this repo had. A `path:line` grounding was verified by confirming the line was *in range* — a citation displaced by an insertion above it passed. Step 2.5's tier-2 check now resolves a `path (anchor)` grounding through `resolve-citation.{sh,ps1}`; exit 0 keeps the finding, any non-zero drops into the existing tally. `path:line` keeps today's in-range read, unchanged. Reached through a new coherence-owned `resolve-config cite` subcommand rather than a locate ladder written into prose, over one parameterized `locate_driver_script()` ladder shared by both twins instead of a second copy free to drift. |
+| #103 Bar anchor-dropping truncation from the verbatim grounding rule | #115 | Extends the `grounding`-ref Invariants bullet in `docs/issue-templates.md`. Both truncation shapes fail **silently**, which is why the composed body is the enforcement point: a dropped `(anchor)` leaves a bare path that is never handed to a resolver, and an anchor cut short but still parenthesized is a literal substring, so the resolver exits 0 and can answer about a **different region** than the one cited. Only a mangled anchor, whose bytes are absent from the file, reaches D3's fail-closed path. |
+
+### Consumer notes (upgrading from v0.4.0)
+
+- **Nothing you have written becomes wrong.** `path:line` stays fully valid at every slot, no slot was changed to require an anchor, and no citation already in your repo was re-anchored. The anchor form is offered, never imposed.
+- **A stale anchor now surfaces where a stale line number did not.** Step 2.5's tier-2 check resolves an anchor-carrying grounding for real; a finding whose anchor no longer appears in the file it names is dropped and counted, rather than passing an in-range test that proved nothing.
+- **New `resolve-config` subcommand** — `scripts/resolve-config.<sh|ps1> cite <file> <anchor>`, a pure pass-through to the driver's resolver: the caller's verdict *is* the primitive's exit code, so there is no record stream and no `SUMMARY` to parse.
+- **Requires `milestone-driver` v1.19.0 or later** for `skills/citation-format.md` and `scripts/resolve-citation.{sh,ps1}`. An unlocatable primitive exits 1 and degrades into the existing tier-2 tally — it never crashes a review and never gates a merge.
+- **No schema changes** to `.milestone-config/driver.json`.
+
+### ⚖️ Post-run audit trail
+
+Judgment-call PRs for this release: **none**.
+
+**#103 was parked twice and rewritten three times, both times for the same class of error.** The clause it ships had to state *how* a truncated citation fails, and the first two drafts each asserted a **loud** failure where the real behavior is **silent** — draft 1 cited D3 for a dropped `(anchor)`, which D3's own scoping sentence disclaims; draft 2 claimed a shortened-but-parenthesized anchor "fails closed," when a contiguous truncation is still a literal substring and exits 0. The second was caught only by running the shipped resolver rather than reasoning about it: truncating `Resolution is a literal string search` to `literal string` exits 0 and returns line 25, the four-forms table, instead of line 115. Both drafts read as plausible. Worth noting because the milestone's entire subject is silent staleness, and the rule text got it backwards twice.
+
+**Six follow-ups were filed during the run and are open against no milestone.** Two are pre-existing defects reproduced independently while building #105: **#111** (`resolve-config.sh:307` captures `printf`'s exit status, so the bash leg's fail-closed branch is dead and the twins diverge) and **#113** (`resolve-config.ps1` dispatch unrolls `$rest` to `$null`, so `resolve-config.ps1 keys` crashes while the bash twin works). The other four are anchor-form gaps this milestone's scope boundary deliberately left: **#106**, **#107**, **#109**, and **#108** (`needs decision` — an anchor containing a comma is ambiguous in the `sites`/`diverging` bracket lists).
+
 ## v0.4.0 — consumer-shaped spin-out issues
 
 **Theme:** spin-out issues stop imposing this plugin's house style and adopt the consumer repo's own issue-template convention — without ever inferring what an unknown field means, and without letting a template's shape gate or lengthen a finding. Shipped alongside a release-hygiene sweep that removed the hand-maintained version text and stale inventories the docs had accumulated.
