@@ -34,6 +34,9 @@ resolve-config.sh keys [REPO_ROOT]
 
 # Resolve specific .project/ sections (one or more "<doc>#<heading>" specs).
 resolve-config.sh docs [REPO_ROOT] [PROJECT_DOCS_ROOT] -- conventions.md#Service\ layer design-system.md#Buttons
+
+# Resolve one anchor citation — "path (anchor)" — to the line the anchor sits on.
+resolve-config.sh cite scripts/resolve-config.sh 'locate_driver_script() {'
 ```
 
 - `REPO_ROOT` defaults to the current directory.
@@ -42,6 +45,11 @@ resolve-config.sh docs [REPO_ROOT] [PROJECT_DOCS_ROOT] -- conventions.md#Service
 - Everything after `--` is a `<doc>#<heading>` spec: the filename under the docs
   root, then `#`, then the **heading text without the leading `#`s** (e.g.
   `conventions.md#Service layer` matches the `## Service layer` heading).
+- `cite` takes exactly two arguments and no options: the **file path**, written
+  as the citation writes it (a relative path resolves against the current
+  directory, so run it from the repo root), and the **anchor** — a literal
+  string that appears somewhere in that file. See
+  ["Resolving an anchor citation"](#resolving-an-anchor-citation-cite) below.
 
 ## Where the shared keys come from (resolution order)
 
@@ -93,8 +101,10 @@ A resolved section is also skipped when it carries no real grounding:
 
 ### Finding the driver primitive
 
-The driver is a separate installed plugin, so this layer locates its script
-robustly, most-reliable-first, and degrades cleanly if it can't:
+The driver is a separate installed plugin, so this layer locates the primitive it
+needs — `read-doc-section` for `docs`, `resolve-citation` for `cite` — robustly,
+most-reliable-first, and degrades cleanly if it can't. It is **one** ladder,
+asked for a different script name; both walk these steps in this order:
 
 1. If `CLAUDE_PLUGIN_ROOT` is set (it is *this* plugin's own versioned install
    dir), look for the driver as a sibling under the same marketplace cache dir —
@@ -110,13 +120,73 @@ For paths 1 and 3, "highest version" means the genuinely highest **SemVer**
 above `1.9.0` — never a plain text sort.
 
 If none of these finds the primitive, every requested section is skipped and the
-"no doc grounding" signal is raised (see below) — never a crash.
+"no doc grounding" signal is raised (see below) — never a crash. When it's `cite`
+that came up empty, the same exhausted ladder exits `1` with the reason on stderr
+— the same answer as an anchor that didn't resolve, so nothing downstream needs a
+special case for a degraded install.
+
+## Resolving an anchor citation (`cite`)
+
+A citation can point at a **literal string** instead of a line number —
+`path (anchor)`, the form defined in `milestone-driver`'s
+`skills/citation-format.md § The four forms`. It exists because a line number
+goes stale the moment anything above it is edited, silently, while an anchor
+keeps naming the region it was written for.
+
+`cite` answers one question: **is this anchor still in this file, and where?**
+The coherence orchestrator asks it once per anchor-carrying finding, in the
+grounding check that runs before a finding is rendered or routed
+(`docs/analyze-once.md` §"Tier 2 — one bounded live re-check (only on a tier-1
+miss)").
+
+As with the section read, coherence does **not** implement the search. It locates
+the installed milestone-driver's `resolve-citation` primitive — the **same
+ladder**, same order, same clean degradation, described under
+["Finding the driver primitive"](#finding-the-driver-primitive) — and hands it the
+work. That primitive ships in milestone-driver **v1.19.0** and later; an older
+driver simply doesn't have it, which the ladder reports as not found.
+
+**`cite` is a pass-through.** Unlike `keys` and `docs`, it emits **no** record
+stream and **no** `SUMMARY` line: the primitive's stdout, its stderr, and its exit
+code are relayed **unchanged** — nothing reformatted, nothing filtered, nothing
+re-interpreted. What the caller reads is the primitive's own answer.
+
+On success that answer is one TAB-separated record per occurrence, in file order:
+
+| Record | Meaning |
+| --- | --- |
+| `PRIMARY <line> <text>` | the **first** occurrence in the file — the resolved location |
+| `MATCH <line> <text>` | every further occurrence, when the anchor isn't unique |
+
+`<line>` is 1-based; `<text>` is the whole matched line, verbatim. `PRIMARY` is a
+**label, not a filter**: a non-unique anchor still resolves on its first match,
+and the extra `MATCH` rows are informational — they tell the citation's author the
+anchor was less unique than intended, and they never change the outcome.
+
+A miss is **fail-closed**, exactly like the section read: nothing on stdout, the
+anchor and the file named on stderr, and a non-zero exit.
+
+### Exit codes for `cite`
+
+| Code | Meaning |
+| --- | --- |
+| `0` | at least one match — the anchor resolved |
+| `1` | the anchor wasn't found, **or** the file is missing/unreadable, **or** the `resolve-citation` primitive couldn't be located |
+| `2` | bad usage — not exactly two arguments, or an empty anchor (an empty string matches every line, so it's a usage error rather than a whole-file answer) |
+
+`0`–`2` are the primitive's own codes, relayed. The **unlocatable-primitive** case
+is folded into `1` deliberately: a caller asking "did this anchor resolve?" gets
+the same answer either way, so a degraded install needs no special handling
+anywhere downstream — the grounding is reported as unresolved and the run
+continues (`.project/design-philosophy.md#Error & failure philosophy`).
 
 ## The output: one record per line
 
-Both scripts emit a deterministic, TAB-separated record stream — the same shape
-`milestone-driver`'s own scripts use. The caller parses it once and distributes
-slices. Records:
+For `keys` and `docs`, both scripts emit a deterministic, TAB-separated record
+stream — the same shape `milestone-driver`'s own scripts use. The caller parses it
+once and distributes slices. (`cite` is the exception: it relays its primitive
+verbatim and emits no records — see
+["Resolving an anchor citation"](#resolving-an-anchor-citation-cite).) Records:
 
 | Record | Meaning |
 | --- | --- |
@@ -191,6 +261,9 @@ record stream is CR-free regardless of how the config or docs were authored.)
 
 ### Exit codes
 
+These are the `keys` and `docs` codes; `cite` relays its primitive's instead (see
+[Exit codes for `cite`](#exit-codes-for-cite)).
+
 | Code | Meaning |
 | --- | --- |
 | `0` | ran successfully, **including** every clean-degradation case |
@@ -211,6 +284,8 @@ Absence is expected and handled; only a present-but-broken config is an error.
 | `.project/` (or the docs root) absent entirely | no sections; `SIGNAL no-doc-grounding`; exit 0 |
 | a cited section absent, empty, or a lone-`[TBD]` placeholder | `SKIP section …`; every other cited section still resolves (a section that only *mentions* `[TBD]` is real grounding and resolves) |
 | the driver `read-doc-section` primitive can't be found | each section `SKIP …`; `SIGNAL no-doc-grounding`; exit 0 |
+| `cite`: the anchor isn't in the file, or the file is missing/unreadable | nothing on stdout; the failing anchor and/or file named on stderr; exit 1 (fail-closed, relayed from the primitive) |
+| `cite`: the driver `resolve-citation` primitive can't be found (no driver, or one older than v1.19.0) | nothing on stdout; the reason on stderr; exit 1 — the same answer as an anchor that didn't resolve, so the caller reports the grounding unresolved and continues; **no crash** |
 
 ## Resolve-once contract
 
@@ -221,9 +296,17 @@ large-drift handoff gets a tight brief) — no subagent re-reads the same
 file/section (`BRIEF.md` l.35-40, l.114). Same DNA as the driver's resolve-once
 block.
 
+`cite` sits outside that count. It isn't a gather — it's a **verification** call
+the orchestrator makes later, at most once per anchor-carrying finding, during
+the grounding check (`docs/analyze-once.md` §"Tier 2 — one bounded live re-check
+(only on a tier-1 miss)"). It caches nothing and resolves nothing for anyone
+else.
+
 ## Dependency note
 
 The config read uses `jq` (bash) or PowerShell's built-in `ConvertFrom-Json`
 (pwsh). `jq` is the suite's already-permitted JSON tool — no new dependency is
-introduced. The doc-section read reuses the driver's existing dependency-free
-primitive unchanged.
+introduced. The doc-section read and the anchor read both reuse the driver's
+existing dependency-free primitives unchanged — `read-doc-section` and
+`resolve-citation`, two scripts from the same already-required plugin, neither
+copied and neither reimplemented.

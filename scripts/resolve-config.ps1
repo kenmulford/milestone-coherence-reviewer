@@ -7,9 +7,18 @@
 # See resolve-config.sh for the full contract. Summary:
 #   resolve-config.ps1 keys [REPO_ROOT]
 #   resolve-config.ps1 docs [REPO_ROOT] [PROJECT_DOCS_ROOT] -- DOC#ANCHOR [DOC#ANCHOR ...]
+#   resolve-config.ps1 cite FILE_PATH ANCHOR_TEXT
 #
-# Records (TAB-separated): KEY · SKIP · SIGNAL · SECTION-BEGIN/END · ERROR · SUMMARY.
-# Exit: 0 ran (incl. clean degradation) · 2 bad usage · 3 malformed config surfaced.
+# Records (TAB-separated), keys + docs: KEY · SKIP · SIGNAL · SECTION-BEGIN/END ·
+# ERROR · SUMMARY. Exit: 0 ran (incl. clean degradation) · 2 bad usage ·
+# 3 malformed config surfaced.
+#
+# `cite` is the one PASS-THROUGH subcommand (issue #105): it resolves an
+# anchor-carrying citation — `path (anchor)` — via the installed driver's
+# resolve-citation.ps1 primitive and relays that primitive's stdout, stderr and
+# exit code UNCHANGED. No record stream, no SUMMARY, no reformatting. Exit:
+# 0 at least one match · 1 anchor not found / file missing/unreadable / primitive
+# not locatable · 2 bad usage.
 #
 # Config reads use PowerShell's built-in ConvertFrom-Json (no new dependency); the
 # doc-section read invokes the installed milestone-driver's read-doc-section.ps1
@@ -58,6 +67,7 @@ function Encode-Value([string]$s) {
 function Usage {
   Err "usage: $Prog keys [REPO_ROOT]"
   Err "       $Prog docs [REPO_ROOT] [PROJECT_DOCS_ROOT] -- DOC#ANCHOR [DOC#ANCHOR ...]"
+  Err "       $Prog cite FILE_PATH ANCHOR_TEXT"
   exit 2
 }
 
@@ -118,7 +128,7 @@ function Cmd-Keys([string[]]$rest) {
   Flush; return 0
 }
 
-# Select-HighestVersionPath: from candidate '.../<ver>/scripts/read-doc-section.ps1'
+# Select-HighestVersionPath: from candidate '.../<ver>/scripts/<primitive>.ps1'
 # paths, return the one whose VERSION DIR (two levels above the file) is the
 # genuinely-highest SemVer — numeric major/minor/patch, NOT lexical. Lexical sort
 # mis-orders 1.9.0 above 1.10.0/1.12.0 (finding 5); this matches the .sh's
@@ -144,9 +154,15 @@ function Select-HighestVersionPath {
   return ''
 }
 
-# Locate the installed milestone-driver read-doc-section.ps1 primitive.
-# Most-robust-first; degrades to '' (caller treats sections as unresolvable).
-function Locate-ReadDocSection {
+# Locate an installed milestone-driver primitive, by script basename ($Leaf).
+# Most-robust-first; degrades to '' (the caller degrades instead of crashing: a
+# section becomes absence-means-skip, a `cite` becomes a tier-2 failure).
+#
+# ONE ladder, two named entry points below (issue #105) — a second copy for
+# resolve-citation would be a duplicated helper free to drift from this one
+# (.project/library-manifest.md#Avoid / banned), and it is what makes "the SAME
+# ladder" literal rather than a claim. Mirrors locate_driver_script() in the .sh.
+function Locate-DriverScript([string]$Leaf) {
   # (1) Co-installed sibling via CLAUDE_PLUGIN_ROOT. That var is THIS plugin's own
   #     versioned install dir: <plugins>/cache/<marketplace>/<plugin>/<ver>. Two
   #     Split-Parents strip <plugin>/<ver>, leaving the marketplace dir under which
@@ -158,7 +174,7 @@ function Locate-ReadDocSection {
     $marketDir = Split-Path -Parent (Split-Path -Parent $env:CLAUDE_PLUGIN_ROOT)
     $siblingGlob = Join-Path $marketDir 'milestone-driver'
     if (Test-Path -LiteralPath $siblingGlob -PathType Container) {
-      $cands = @(Get-ChildItem -Path (Join-Path $siblingGlob '*/scripts/read-doc-section.ps1') -File -ErrorAction SilentlyContinue)
+      $cands = @(Get-ChildItem -Path (Join-Path $siblingGlob "*/scripts/$Leaf") -File -ErrorAction SilentlyContinue)
       $pick = Select-HighestVersionPath $cands
       if (-not [string]::IsNullOrEmpty($pick)) { return $pick }
     }
@@ -178,7 +194,7 @@ function Locate-ReadDocSection {
       $entry = $m.plugins.'milestone-driver@milestone-suite'
       if ($entry) {
         $ip = @($entry)[0].installPath
-        $readerPath = Join-Path $ip 'scripts/read-doc-section.ps1'
+        $readerPath = Join-Path $ip "scripts/$Leaf"
         if ((-not [string]::IsNullOrEmpty($ip)) -and (Test-Path -LiteralPath $readerPath -PathType Leaf)) { return $readerPath }
       }
     } catch { }
@@ -188,12 +204,39 @@ function Locate-ReadDocSection {
   #     finding 5).
   $cacheGlob = Join-Path $pluginsRoot 'cache/milestone-suite/milestone-driver'
   if (Test-Path -LiteralPath $cacheGlob -PathType Container) {
-    $cands = @(Get-ChildItem -Path (Join-Path $cacheGlob '*/scripts/read-doc-section.ps1') -File -ErrorAction SilentlyContinue)
+    $cands = @(Get-ChildItem -Path (Join-Path $cacheGlob "*/scripts/$Leaf") -File -ErrorAction SilentlyContinue)
     $pick = Select-HighestVersionPath $cands
     if (-not [string]::IsNullOrEmpty($pick)) { return $pick }
   }
 
   return ''
+}
+
+# The `.project/` section primitive — the docs subcommand's reader.
+function Locate-ReadDocSection { Locate-DriverScript 'read-doc-section.ps1' }
+
+# The `path (anchor)` citation primitive — the cite subcommand's resolver.
+# Shipped in milestone-driver v1.19.0; an older driver resolves to '' here, the
+# same clean degradation as an absent driver.
+function Locate-ResolveCitation { Locate-DriverScript 'resolve-citation.ps1' }
+
+# Find a pwsh to run a located primitive with. Prefer a 'pwsh' on PATH (the
+# install's own launcher/shim), then the running PowerShell's $PSHOME binary, then
+# the literal name. NOT (Get-Process -Id $PID).Path alone — that returns the
+# dotnet host, not pwsh, when PowerShell is a dotnet global tool. On a standard
+# PS7 install all candidates agree; the list just covers edge installs. Shared by
+# `docs` and `cite` so both spawn the primitive the same way.
+function Resolve-PwshExe {
+  $pwshExe = $null
+  $onPath = Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($onPath) { $pwshExe = $onPath.Source }
+  if ([string]::IsNullOrEmpty($pwshExe)) {
+    foreach ($cand in @((Join-Path $PSHOME 'pwsh'), (Join-Path $PSHOME 'pwsh.exe'))) {
+      if (Test-Path -LiteralPath $cand -PathType Leaf) { $pwshExe = $cand; break }
+    }
+  }
+  if ([string]::IsNullOrEmpty($pwshExe)) { $pwshExe = 'pwsh' }
+  return $pwshExe
 }
 
 function Cmd-Docs([string[]]$rest) {
@@ -233,20 +276,7 @@ function Cmd-Docs([string[]]$rest) {
     RecSignal 'no-doc-grounding'; Flush; return 0
   }
 
-  # Find a pwsh to run the primitive with. Prefer a 'pwsh' on PATH (the install's
-  # own launcher/shim), then the running PowerShell's $PSHOME binary, then the
-  # host process path. NOT (Get-Process -Id $PID).Path alone — that returns the
-  # dotnet host, not pwsh, when PowerShell is a dotnet global tool. On a standard
-  # PS7 install all candidates agree; the list just covers edge installs.
-  $pwshExe = $null
-  $onPath = Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-  if ($onPath) { $pwshExe = $onPath.Source }
-  if ([string]::IsNullOrEmpty($pwshExe)) {
-    foreach ($cand in @((Join-Path $PSHOME 'pwsh'), (Join-Path $PSHOME 'pwsh.exe'))) {
-      if (Test-Path -LiteralPath $cand -PathType Leaf) { $pwshExe = $cand; break }
-    }
-  }
-  if ([string]::IsNullOrEmpty($pwshExe)) { $pwshExe = 'pwsh' }
+  $pwshExe = Resolve-PwshExe
 
   $resolved = 0
   foreach ($spec in $specs) {
@@ -300,6 +330,57 @@ function Cmd-Docs([string[]]$rest) {
   Flush; return 0
 }
 
+function Cmd-Cite([string[]]$rest) {
+  # $null -eq $rest FIRST, and it is load-bearing: with NO args after the
+  # subcommand the dispatch site's `else { @() }` is unrolled by the statement's
+  # output pipeline, so $rest arrives $null rather than an empty array, and under
+  # Set-StrictMode -Version Latest `$null.Count` is a TERMINATING error. Without
+  # this guard `cite` with zero args crashed with a ParentContainsErrorRecordException
+  # and exited 1, where the .sh printed usage and exited 2 — the one case where
+  # this subcommand broke byte parity (review finding, issue #105).
+  if ($null -eq $rest -or $rest.Count -ne 2) { Err "${Prog}: cite: expected exactly 2 args: FILE_PATH ANCHOR_TEXT"; Usage }
+  $file = $rest[0]; $anchor = $rest[1]
+
+  # Locate once, via the shared ladder. Unlocatable -> exit 1 with the reason on
+  # stderr, which is the primitive's own not-found code: the caller's tier-2 check
+  # reads "cannot locate" and "did not resolve" identically, so no caller has to
+  # special-case a degraded install (docs/analyze-once.md §"Tier 2 …";
+  # .project/design-philosophy.md#Error & failure philosophy).
+  $resolver = Locate-ResolveCitation
+  if ([string]::IsNullOrEmpty($resolver)) {
+    Err "${Prog}: cite: resolve-citation primitive not found (milestone-driver v1.19.0+): $file ($anchor)"
+    return 1
+  }
+
+  # PASS-THROUGH. Start the primitive with its stdout and stderr handles
+  # INHERITED (UseShellExecute=$false, nothing redirected) rather than captured
+  # through the PowerShell pipeline: the primitive's bytes reach the caller
+  # exactly as it wrote them — no re-encoding, no host line-ending rewrite, no
+  # re-splitting of a line holding a lone CR — which is what makes this leg
+  # byte-identical to the .sh's inherited `bash "$resolver" …`. It also keeps the
+  # exit code out of $LASTEXITCODE / native-command error semantics, which vary by
+  # host version ($PSNativeCommandUseErrorActionPreference), and a nonzero exit is
+  # this subcommand's NORMAL not-found path, never an exception.
+  #
+  # No arg validation beyond the count: an empty anchor is the primitive's own
+  # exit-2 usage error, and re-deciding it here would be a second copy of a
+  # contract that already has one owner.
+  try {
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = Resolve-PwshExe
+    foreach ($a in @('-NoProfile', '-File', $resolver, $file, $anchor)) { $psi.ArgumentList.Add($a) }
+    $psi.UseShellExecute = $false
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $proc.WaitForExit()
+    return $proc.ExitCode
+  } catch {
+    # A spawn failure degrades exactly like an unlocatable primitive — reported,
+    # never a crash.
+    Err "${Prog}: cite: could not run resolve-citation: $($_.Exception.Message)"
+    return 1
+  }
+}
+
 # dispatch
 if ($args.Count -lt 1) { Usage }
 $sub = $args[0]
@@ -307,6 +388,7 @@ $rest = if ($args.Count -gt 1) { @($args[1..($args.Count-1)]) } else { @() }
 switch ($sub) {
   'keys'   { exit (Cmd-Keys $rest) }
   'docs'   { exit (Cmd-Docs $rest) }
+  'cite'   { exit (Cmd-Cite $rest) }
   '-h'     { Usage }
   '--help' { Usage }
   'help'   { Usage }
