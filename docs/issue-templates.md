@@ -180,7 +180,20 @@ that reads a `.yml`.
   whether the template has an evidence-shaped field, and on every rung, mode, and
   degradation row. It inherits the engine's central rule
   (`agents/coherence-reviewer.md:58`) and the write-up's verbatim-citation rule
-  (`docs/write-up.md:107`).
+  (`docs/write-up.md:107`). When the ref carries a `path (anchor)` form, verbatim
+  preservation includes the anchor, and both truncation shapes fail silently.
+  Dropping the `(anchor)` leaves a bare path that is never handed to a resolver —
+  nothing fails, nothing warns, and the reader is returned to the whole file the
+  anchor form exists to narrow
+  (`milestone-driver/skills/citation-format.md (any region of any file, keyed to a literal string)`).
+  Cutting the anchor short but keeping the parentheses is worse: resolution is a
+  literal substring search, so the shortened anchor is still found, the resolver
+  exits 0, and it can answer with a different region than the one cited
+  (`milestone-driver/skills/citation-format.md (Resolution is a literal string search)`).
+  Only a mangled anchor, whose bytes are absent from the file, fails closed
+  (`milestone-driver/skills/citation-format.md § D3 — an anchor that is not found fails closed`)
+  — so neither truncation shape can be caught downstream, and the composed body
+  is the only place to bar them.
 - **Never gates.** Every resolution or parse failure degrades to the built-in
   shape and the issue **is still created**. No template condition can prevent a
   spin-out, and none can block the merge (`docs/heal-routing.md` §"Never a gate —
