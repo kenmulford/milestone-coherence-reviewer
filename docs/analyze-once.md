@@ -149,8 +149,36 @@ finding — never a retry loop, never a fresh whole-repo grep, never a
 | `grounding` kind | The one-shot tier-2 re-check |
 | --- | --- |
 | `<path>:<line>` | read that exact file directly and confirm the line is in-range — one bounded read, not a re-grep |
+| `<path> (<anchor>)` | resolve that one anchor directly, via the driver's shipped citation primitive called through this repo's own wrapper (`scripts/resolve-config.<sh\|ps1> cite <path> <anchor>`) — one bounded file scan, not a re-grep. **Exit 0** (one or more matches): the grounding resolves — keep the finding, and take the `PRIMARY` line as its resolved location. **Any non-zero exit is a tier-2 failure**, so the finding falls into the existing tally below, unchanged: `1` is the anchor not found or the file missing/unreadable, `2` is bad usage — which an anchor authored empty (`path ()`) produces, since an empty string matches every line — and any code the primitive grows later lands in the same bucket rather than in undefined behavior. The primitive being **unlocatable** exits 1 as well, so a degraded install is treated *exactly* like an anchor that did not resolve. Every one of those paths is dropped, tallied, and noted, and none is a crash or a merge block (`.project/design-philosophy.md#Error & failure philosophy`) |
 | `.project/<doc>#<section>` | re-resolve that one section directly, via the same primitive Step 1 already calls (`scripts/resolve-config.<sh\|ps1> docs <REPO_ROOT> -- <doc>#<heading>`) — one section read, not the whole doc |
-| `domainSkills:<source>` | re-check the source string against the resolved `domainSkills` list — the same list tier 1 already checked. No live `domainSkills`-resolution path exists anywhere in the engine (`agents/coherence-reviewer.md` §"What you receive") — so this re-check is definitionally a no-op. It still runs, for contract symmetry across the three grounding kinds; no fixture where it does anything other than reconfirm tier 1 is constructible, and none is expected |
+| `domainSkills:<source>` | re-check the source string against the resolved `domainSkills` list — the same list tier 1 already checked. No live `domainSkills`-resolution path exists anywhere in the engine (`agents/coherence-reviewer.md` §"What you receive") — so this re-check is definitionally a no-op. It still runs, for contract symmetry across the four grounding kinds; no fixture where it does anything other than reconfirm tier 1 is constructible, and none is expected |
+
+An anchor grounding has **no tier-1 entry** — the Step 1/Step 2 cache holds no
+anchor index to look one up in — so it always misses the cache-only check and
+resolves here, at the cost of the one bounded call every other tier-2 kind
+already pays. Tier 1 itself is unchanged.
+
+Three things the anchor row does **not** change:
+
+- **The resolved `PRIMARY` line stays orchestrator-internal.** It feeds the
+  [file-scope derivation](#file-scope-is-orchestrator-derived) and nothing else.
+  It never rewrites the rendered citation: the write-up renders the engine's
+  `grounding` ref **verbatim, as the engine emitted it**
+  (`docs/write-up.md:107-108`).
+- **Extra `MATCH` rows are informational.** An anchor matching several places
+  still passes on its first match; the further rows only report that the anchor
+  was less unique than its author intended, and never change the pass/fail
+  outcome (`milestone-driver/scripts/resolve-citation.sh (PRIMARY is a LABEL, NOT A FILTER)`).
+- **The line forms are untouched.** `<path>:<line>` and `<path>:<start>-<end>`
+  keep today's in-range read and stay permanently valid to write — a live form,
+  not a legacy tolerance and not a deprecation path
+  (`milestone-driver/skills/citation-format.md § D2 — resolution, and the line forms`).
+
+The citation forms themselves — including what `<path> (<anchor>)` means and how
+it parses — are defined once in
+`milestone-driver/skills/citation-format.md § The four forms`, and offered at the
+engine's `grounding` slot by `agents/coherence-reviewer.md` §"Structured return
+block". Neither is restated here.
 
 A tier-2 pass renders and routes the finding exactly as a tier-1 pass would —
 no drop-count contribution from that finding.
