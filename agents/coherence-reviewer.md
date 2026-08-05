@@ -92,23 +92,25 @@ SOURCES:
 FINDINGS:                                        # when clean-fit, this whole block is the inline scalar `FINDINGS: none` (key and `none` on one line, no child items) — see the note below
   - symbol: <the diff symbol/pattern this finding is keyed to>
     lens: built-differently | fresh-vs-base | ignored-convention | duplicated-helper | hand-rolled-library | framework-best-practice
-    grounding: <exactly one — .project/<doc>#<section> | <path>:<line> | domainSkills:<source>>
+    grounding: <exactly one — .project/<doc>#<section> | <path>:<line> | <path> (<anchor>) | domainSkills:<source>>
     severity: drift-trivial | drift-small | drift-medium | drift-large   # drift-SIZE hint for the orchestrator's heal routing; NOT a merge verdict
     description: <one plain-English line: what diverges and from what>
 PROPOSALS:                                       # when nothing to propose, the inline scalar `PROPOSALS: none` (key and `none` on one line, no child items) — exactly like `FINDINGS: none`
   - heading: <the proposed ## conventions.md heading — a stable citation anchor>
     rule: <one-line rule for the `>` blockquote>
-    exemplar: <path:line — the canonical exemplar to cite in the entry>
-    sites: [<file:line>, ...]        # the >=3 consistent sites (agree), or the cluster sites (disagree)
-    disagree: yes | no               # yes = a mixed/disagreeing cluster; the rule recommends a grounded winner
-    diverging: [<file:line>, ...]    # only when disagree: yes — the sites differing from the recommended winner (NOT auto-changed)
-    source: per-change | sweep       # per-change = this diff-keyed review; sweep = the app-wide sweep (#28) feeds this same lane
-    grounding: <exactly one — domainSkills:<source> | <path>:<line> | .project/<doc>#<section>>
+    exemplar: <path:line | path (anchor) — the canonical exemplar to cite in the entry>
+    sites: [<path:line | path (anchor)>, ...]          # the >=3 consistent sites (agree), or the cluster sites (disagree)
+    disagree: yes | no                                 # yes = a mixed/disagreeing cluster; the rule recommends a grounded winner
+    diverging: [<path:line | path (anchor)>, ...]      # only when disagree: yes — the sites differing from the recommended winner (NOT auto-changed)
+    source: per-change | sweep                         # per-change = this diff-keyed review; sweep = the app-wide sweep (#28) feeds this same lane
+    grounding: <exactly one — domainSkills:<source> | <path>:<line> | <path> (<anchor>) | .project/<doc>#<section>>
 ```
 
 - `FINDINGS: none` (the literal string "none", inline on the same line as the key — never a child `- none` list item) is a **valid clean-fit outcome** — the change fits, nothing to route. It is never an error and never a failure. This mirrors the sibling triage/design-reviewer empty sentinels (`GAPS: none`, `DEPENDS_ON: []`): one inline scalar, parseable without inspecting child items. There is exactly one way to represent clean-fit, identical across this template, this prose, and the degradation matrix below.
 - `SOURCES` makes the degradation visible: it states which of the three sources were actually available, so the caller can read an empty/short FINDINGS list correctly (clean fit vs. thin grounding).
 - `grounding` carries **exactly one** ref — the hard-grounding rule. A finding cannot reach this block without one.
+- The citation forms these slots accept — `<path> (<anchor>)` included — are defined in `milestone-driver/skills/citation-format.md § The four forms`, not restated here. No slot requires an anchor: `<path>:<line>` stays valid to write at all five. A heading form is admitted at the two `grounding` slots only, and only as the `.project/<doc>#<section>` their enums list; `exemplar`, `sites`, and `diverging` take a repo file ref, so a heading target is cited there in the anchor or line form.
+- `exemplar` prefers the anchor form: the orchestrator writes that value verbatim into a standing `.project/conventions.md` entry (`docs/proposal-pr.md (write the entry)`), which outlives the line the exemplar sits on today. A preference, not a requirement.
 - `severity` is a **drift-size hint** for the orchestrator's size-based heal routing (trivial → inline; small/medium → current-milestone issue; large → feeder), per `BRIEF.md` §"It heals, it doesn't gate". It is **not** a Blocker/Advisory verdict and **never** blocks the merge.
 - `PROPOSALS: none` (inline scalar, exactly like `FINDINGS: none`) is the **valid no-proposal outcome** — nothing rose to a proposable rule. It is never an error. The two blocks are independent: a run can carry findings with no proposals, proposals with no findings, both, or neither.
 
