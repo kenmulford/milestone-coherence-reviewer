@@ -112,7 +112,7 @@ So each rendered item carries, in order:
 ### The `gh issue create` redo one-liner
 
 Reuse the suite's established issue-create primitive — the same one the feeder
-uses to write issues (convention: `milestone-feeder/skills/create/SKILL.md:182`,
+uses to write issues (convention: `milestone-feeder/docs/create-deploy-sequence.md` §"c. Create each surviving issue; build the slug→`#n` map",
 `gh issue create --title … --body …`). Render it copy-paste-ready and scoped to
 the specific change it would redo:
 
@@ -215,16 +215,16 @@ The same write-up content lands in four places, but they are **not** equal
 The hierarchy is an invariant: the inline summary is always rendered as the
 primary copy, and the three mirrors are always rendered as supplemental copies of
 *that same content* — never the other way round. (Convention for the comment
-write surface: `milestone-driver/skills/triage/SKILL.md:292`
-`gh issue comment <n> --body "…"`; `milestone-driver/skills/solve-issue/SKILL.md:234`
+write surface: `milestone-driver/skills/triage/SKILL.md` §"Step 6 - Comment on each affected issue and recommend its park label"
+`gh issue comment <n> --body "…"`; `milestone-driver/skills/solve-issue/permission-preflight.md` §"Tool surface and response"
 `gh pr comment <pr>`.)
 
 ## The empty / clean-fit state — never silence
 
 A change that fits with **zero findings** (`FINDINGS: none`) still produces a
 write-up. It reports the positive outcome explicitly — e.g. **"Fits cleanly —
-nothing changed"** — and is never silence or an empty output (`BRIEF.md` l.23,
-l.141 "what fits, what doesn't").
+nothing changed"** — and is never silence or an empty output (`BRIEF.md` §"What it is",
+§"Definition of done" "what fits, what doesn't").
 
 - The headline is produced exactly as in the finding case: the inline summary is
   primary, the three mirrors are supplemental copies of the clean-fit note.
@@ -249,8 +249,8 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 
 - Concise and flat — no wall-of-text, no preamble, no congratulatory notes. It
   follows the suite's terse output norm (convention:
-  `milestone-driver/docs/architecture.md:174-176` concise/tabular output;
-  `milestone-feeder/agents/issue-author.md:113-115` "Terse, evidence-grounded,
+  `milestone-driver/docs/architecture.md` §"Output style" concise/tabular output;
+  `milestone-feeder/docs/style-contracts.md` §"Communication style" "Terse, evidence-grounded,
   flat").
 - One short item per finding — what / why / citation / one-liner — not an essay
   per finding. **Over-explaining defeats the tool** and is rejected.
@@ -264,9 +264,8 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 
 A supplemental mirror whose target is unavailable is **skipped, noted, and never
 allowed to suppress the primary inline summary** (`BRIEF.md` l.89, l.96; the
-suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md:103`,
-`milestone-feeder/skills/plan/SKILL.md:166` "Degrade gracefully: a missing … is
-not an error").
+suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md` §"Keys" (the `Absent →` rows),
+`milestone-feeder/skills/plan/SKILL.md` §"Step 0: Read config + project docs (best-effort), once-per-run OUTER boundary").
 
 | Unavailable target | Behavior |
 | --- | --- |

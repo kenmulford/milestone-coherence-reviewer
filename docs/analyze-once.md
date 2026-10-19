@@ -137,7 +137,7 @@ A tier-1 match passes the finding through unchanged — no tier-2 check needed.
 
 A `grounding` absent from the tier-1 cache is **not** dropped immediately: the
 engine may have grounded it in something it read live, outside the pre-dispatch
-cache (`agents/coherence-reviewer.md` l.42, l.48 — the engine keeps its own
+cache (`agents/coherence-reviewer.md` §"What you receive" — the engine keeps its own
 `Read`/grep tools to pull an *additional* cited `.project/` section, and its
 diff-keyed greps are not guaranteed identical to the orchestrator's own cached
 set). So the verify pass performs exactly **one** mechanical re-resolution per
@@ -164,7 +164,7 @@ Three things the anchor row does **not** change:
   [file-scope derivation](#file-scope-is-orchestrator-derived) and nothing else.
   It never rewrites the rendered citation: the write-up renders the engine's
   `grounding` ref **verbatim, as the engine emitted it**
-  (`docs/write-up.md:107-108`).
+  (`docs/write-up.md` §"The shape, per coherence call").
 - **Extra `MATCH` rows are informational.** An anchor matching several places
   still passes on its first match; the further rows only report that the anchor
   was less unique than its author intended, and never change the pass/fail
