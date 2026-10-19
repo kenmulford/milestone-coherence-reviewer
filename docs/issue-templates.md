@@ -28,7 +28,7 @@ with [heal-routing](heal-routing.md) (the route table) and [recall](recall.md)
 The **built-in shape** is what the spin-out emits today: the finding's
 `description` + `symbol`, plus its single `grounding` ref, verbatim
 (`skills/review/SKILL.md` §"Step 5"; the finding's fields are
-`agents/coherence-reviewer.md:93-97`). Every rung, mode, and degradation row
+`agents/coherence-reviewer.md` §"Structured return block"). Every rung, mode, and degradation row
 below either shapes that content into a template or falls back to it unchanged.
 
 ## The resolution ladder — once per run, repo-wide
@@ -96,11 +96,11 @@ list, regex, or heuristic for deciding which arbitrary field means "evidence" or
 Two reasons, both load-bearing:
 
 - **Guessing is the one thing this engine refuses.** A finding that cannot be
-  hard-grounded is dropped, never guessed (`agents/coherence-reviewer.md:58`).
+  hard-grounded is dropped, never guessed (`agents/coherence-reviewer.md` §"The hard-grounding rule (load-bearing — enforced at emit time)").
   Inferring a stranger's field semantics is the same move, one layer out.
 - **It keeps the body's size set by the finding, not by their template.**
   Emitting a section per field would let a consumer's ten-field form set the
-  body length, breaking the flat-cost property at `docs/write-up.md:255` — *"one
+  body length, breaking the flat-cost property at `docs/write-up.md` §"Tight and legible — over-explaining is rejected" — *"one
   short item per finding … not an essay"*.
 
 This is a **deliberate divergence from `milestone-feeder`'s** equivalent, which
@@ -119,7 +119,7 @@ exactly. The `grounding` ref still lands verbatim in the composed body.
 
 The stock section order is Summary → Impact → Proposed solution → Non-goals →
 Acceptance criteria → detail. A finding carries `description`, `symbol`, `lens`,
-`grounding`, and `severity` (`agents/coherence-reviewer.md:93-97`).
+`grounding`, and `severity` (`agents/coherence-reviewer.md` §"Structured return block").
 
 | Section | Filled from | Notes |
 | --- | --- | --- |
@@ -128,7 +128,7 @@ Acceptance criteria → detail. A finding carries `description`, `symbol`, `lens
 | Proposed solution | the redo one-liner's scoped ask (`skills/review/SKILL.md` §"Step 4") | what to do differently |
 | Non-goals | a **truthful constant** | *"None — filed from a single coherence finding and carrying no scope beyond it."* |
 | Acceptance criteria | **derived — one checkbox** | `- [ ] <symbol> follows the pattern at <grounding>` |
-| detail | the `grounding` ref, **verbatim** | never a paraphrase (`docs/write-up.md:107`) |
+| detail | the `grounding` ref, **verbatim** | never a paraphrase (`docs/write-up.md` §"The shape, per coherence call") |
 
 ### The two stock dropdowns
 
@@ -138,7 +138,7 @@ label taxonomy the bootstrapper's `provision-labels` writes.
 | Dropdown | Behavior |
 | --- | --- |
 | `Risk` | **mapped from `severity`** — `drift-trivial`/`drift-small` → `light`; `drift-medium`/`drift-large` → `heavy`. Grounded: heal routing already routes on `severity` and nothing else (`docs/heal-routing.md` §"The single routing key — drift size, nothing else") |
-| `Surface` | **omitted.** `ui` vs `logic` is not encoded in the finding schema (`agents/coherence-reviewer.md:93-97`), a coherence finding *can* touch a UI surface, and picking one would be a guess. Left for whoever triages the spun-out issue |
+| `Surface` | **omitted.** `ui` vs `logic` is not encoded in the finding schema (`agents/coherence-reviewer.md` §"Structured return block"), a coherence finding *can* touch a UI surface, and picking one would be a guess. Left for whoever triages the spun-out issue |
 
 ### Why the Non-goals constant is not a fabrication
 
@@ -179,8 +179,8 @@ that reads a `.yml`.
   dropped, never paraphrased, never relocated out of existence — regardless of
   whether the template has an evidence-shaped field, and on every rung, mode, and
   degradation row. It inherits the engine's central rule
-  (`agents/coherence-reviewer.md:58`) and the write-up's verbatim-citation rule
-  (`docs/write-up.md:107`). When the ref carries a `path (anchor)` form, verbatim
+  (`agents/coherence-reviewer.md` §"The hard-grounding rule (load-bearing — enforced at emit time)") and the write-up's verbatim-citation rule
+  (`docs/write-up.md` §"The shape, per coherence call"). When the ref carries a `path (anchor)` form, verbatim
   preservation includes the anchor, and both truncation shapes fail silently.
   Dropping the `(anchor)` leaves a bare path that is never handed to a resolver —
   nothing fails, nothing warns, and the reader is returned to the whole file the
@@ -198,7 +198,7 @@ that reads a `.yml`.
   shape and the issue **is still created**. No template condition can prevent a
   spin-out, and none can block the merge (`docs/heal-routing.md` §"Never a gate —
   the merge proceeds regardless").
-- **Body length is set by the finding, not the template** (`docs/write-up.md:255`).
+- **Body length is set by the finding, not the template** (`docs/write-up.md` §"Tight and legible — over-explaining is rejected").
   Mode B guarantees this structurally; Mode A is bounded because the suite (or
   the consumer's own key) controls the template's size.
 - **Resolved once per run, repo-wide** — never per finding, never re-resolved
@@ -233,7 +233,7 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
 
 - **The write-up format**, its four landing places, and the per-finding tightness
   rule (`docs/write-up.md`) — unchanged.
-- **The drop-if-ungroundable inversion** (`agents/coherence-reviewer.md:58`) —
+- **The drop-if-ungroundable inversion** (`agents/coherence-reviewer.md` §"The hard-grounding rule (load-bearing — enforced at emit time)") —
   deliberate, stays.
 - **The `chore/propose-*` conventions-PR lane** (`skills/review/SKILL.md` §"Step 3") —
   a separate lane; a proposal's config-only PR is not an issue and is not shaped

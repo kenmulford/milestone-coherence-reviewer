@@ -36,7 +36,7 @@ No other input influences where a fix lands:
 | **Run length / time elapsed** | a driver-side *context/resource* concern, owned by the driver (compaction + subagent isolation), never a routing input — see [Run length is not a routing signal](#run-length-is-not-a-routing-signal) |
 | **Finding count** | each finding routes on *its own* `severity`; ten trivial findings are ten inline fixes, not one escalation |
 | **Token budget** | a resource concern, like run length — never spills work into a milestone |
-| **Severity-as-verdict** | `severity` is a drift-*size* hint, never a Blocker/Advisory merge verdict (`agents/coherence-reviewer.md` l.105) — it routes, it does not gate |
+| **Severity-as-verdict** | `severity` is a drift-*size* hint, never a Blocker/Advisory merge verdict (`agents/coherence-reviewer.md` §"Drift-size hint (for the orchestrator's routing — not a gate)") — it routes, it does not gate |
 | **Recall / a matched prior write-up** | advisory context for the reader and the engine's derivation only; never a routing signal — it does not move where a fix lands (`docs/write-up.md` §"Recall (read-back)") |
 
 This is the load-bearing invariant: **"Coherence routes on drift size alone, so
@@ -47,7 +47,7 @@ a long run never distorts where a fix lands."** (`BRIEF.md` l.52, l.109.)
 Every value the engine can emit in `severity` has exactly one route, and the
 four routes do not overlap. The table is **total** (it covers
 `drift-trivial`/`drift-small`/`drift-medium`/`drift-large` — the complete enum
-from `agents/coherence-reviewer.md` l.98) and **mutually exclusive** (each
+from `agents/coherence-reviewer.md` §"Drift-size hint (for the orchestrator's routing — not a gate)") and **mutually exclusive** (each
 `severity` maps to one and only one destination):
 
 | `severity` | Route | Destination | Slice it receives (#4) |
@@ -69,8 +69,8 @@ and `large` route identically in either mode.
   orchestrator re-dispatches the implementer to fix it before the PR merges,
   mirroring `/code-review`'s in-scope loop — the reviewer stays read-only; the
   orchestrator performs the heal (convention:
-  `milestone-driver/skills/solve-issue/SKILL.md:183`, "In-scope … re-dispatch
-  the implementer to fix it"; `BRIEF.md` l.46, l.113). The re-dispatch receives
+  `milestone-driver/skills/solve-issue/SKILL.md` §"6. Review → integrate → close",
+  "In-scope … re-dispatch the implementer"; `BRIEF.md` §"It heals, it doesn't gate", §"Recorded decisions (grounding)"). The re-dispatch receives
   **only** the [inline-fix slice](analyze-once.md#the-inline-fix-slice-to-the-implementer-re-dispatch)
   for that one finding — the finding + its citation + the exact file scope — not
   the whole analysis (`analyze-once.md`; `BRIEF.md` l.37).
@@ -128,8 +128,7 @@ adjustments — the [large-drift slice](analyze-once.md#the-large-drift-slice-ha
 from #4 (a tight adjustments brief with citations, *not* a raw repo dump). The
 feeder plans + creates the follow-up milestone with its own triage gate,
 authoring well-formed issues exactly as it does for any other brief (convention:
-`milestone-feeder/skills/create/SKILL.md:182`, "create-or-adopt the milestone …
-open each issue"; `BRIEF.md` l.48, l.38). The router **authors no milestone by
+`milestone-feeder/docs/create-deploy-sequence.md` §"b. Create-or-adopt the milestone (by EXACT title)", §"c. Create each surviving issue; build the slug→`#n` map"; `BRIEF.md` §"It heals, it doesn't gate", §"Analyze once, then distribute (token efficiency)"). The router **authors no milestone by
 hand** — feeding the feeder gives the follow-up the same quality bar as any
 other milestone. What the feeder can and cannot do next (create the milestone,
 but not auto-run the driver in standalone v1) is the
@@ -163,7 +162,7 @@ large — the active issue/PR still merges (`BRIEF.md` l.42-44, l.50):
 - The router produces **no hard stop and no merge-blocking verdict**. It emits a
   destination for each fix; it never emits "do not merge".
 - The `severity` it routes on is a drift-*size* hint, never a merge verdict
-  (`agents/coherence-reviewer.md` l.105). A `drift-large` finding routes to a
+  (`agents/coherence-reviewer.md` §"Drift-size hint (for the orchestrator's routing — not a gate)"). A `drift-large` finding routes to a
   follow-up milestone *and the active PR merges anyway* — the large concern
   becomes captured, auto-built follow-up work, never a silent stop (`BRIEF.md`
   l.50).
@@ -245,7 +244,7 @@ drift size alone, so a long run never distorts where a fix lands.*
 ## Empty / zero-findings — nothing to route
 
 When the review engine returns `FINDINGS: none` (the clean-fit sentinel —
-`agents/coherence-reviewer.md` l.94, l.102), there is **nothing to route**:
+`agents/coherence-reviewer.md` §"Structured return block"), there is **nothing to route**:
 
 - The router opens **no issue**, hands **nothing** to the feeder, and
   re-dispatches **no** implementer.

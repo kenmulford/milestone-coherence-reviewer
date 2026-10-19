@@ -17,7 +17,7 @@ Say this to the user before doing any work:
 
 ## Argument handling — one OPTIONAL positional argument
 
-`sweep` takes a **single optional positional argument** — a `<pattern>` to narrow the scan — passed as `$ARGUMENTS`. It is **string-substituted, not CLI-parsed** (the same detection style as `review`'s argument and the feeder's brief-form detection, `milestone-feeder/skills/plan/SKILL.md:182-188`):
+`sweep` takes a **single optional positional argument** — a `<pattern>` to narrow the scan — passed as `$ARGUMENTS`. It is **string-substituted, not CLI-parsed** (the same detection style as `review`'s argument and the feeder's brief-form detection, `milestone-feeder/skills/plan/SKILL.md` §"Step 1: Ingest the brief (inner routine: begins)"):
 
 | `$ARGUMENTS` | Mode | Scan |
 |---|---|---|
@@ -36,11 +36,11 @@ Resolve config + `.project/` **reusing `skills/review/SKILL.md` Step 1's resolve
 
 ### Step 2 — Gather the SWEEP context and dispatch the engine in SWEEP-MODE — once per sub-path when broad, resumable via a checkpoint (analyze-once, #4 → #3)
 
-Build the sweep context, then dispatch the engine **in sweep-mode** (`docs/analyze-once.md` Steps 1-2). Step 1's config + `.project/` section resolution still runs **once** per skill invocation, exactly as today — it is **not** re-resolved per sub-path; only the dispatch loop below iterates. The **only** change from the prior one-shot dispatch is **how many times** the engine is dispatched on the **broad** path, and that loop is now resumable via a checkpoint file. The **narrowed** path (a `<pattern>` given) is completely unaffected — one dispatch, exactly as before — and the checkpoint file is **neither read nor written** on that path:
+Build the sweep context, then dispatch the engine **in sweep-mode** (`docs/analyze-once.md` Steps 1-2). Step 1's config + `.project/` section resolution runs **once** per skill invocation — it is **not** re-resolved per sub-path; only the dispatch loop below iterates. The **broad** path dispatches the engine once per sub-path, and that loop is resumable via a checkpoint file. The **narrowed** path (a `<pattern>` given) dispatches once, and the checkpoint file is **neither read nor written** on that path:
 
 | Mode | Dispatch | Checkpoint |
 |---|---|---|
-| **narrowed** (`<pattern>` given) | **one** engine dispatch against the whole named pattern, exactly as before | not read, not written — untouched |
+| **narrowed** (`<pattern>` given) | **one** engine dispatch against the whole named pattern | not read, not written |
 | **broad** (no `$ARGUMENTS`) | **one dispatch per top-level sub-path** not yet marked done, in turn | read at the start of the run; written after every sub-path completes |
 
 #### Narrowed sweep — one dispatch, unchanged
@@ -56,7 +56,7 @@ Assemble the four context parts once, scoped to the `<pattern>`, and dispatch th
 
 #### Broad sweep — per-sub-path dispatch, checkpointed
 
-1. **Resolve the checkpoint path.** `.milestone-config/.runtime/sweep-progress.json`, relative to the repo root — the same git-invisible `.runtime/` location the memory mirror already uses (`scripts/memory-mirror.sh:134-138`; `.milestone-config/.gitignore` already lists `.runtime/` — no new ignore rule needed).
+1. **Resolve the checkpoint path.** `.milestone-config/.runtime/sweep-progress.json`, relative to the repo root — the same git-invisible `.runtime/` location the memory mirror already uses (`scripts/memory-mirror.sh (resolve_target)`; `.milestone-config/.gitignore` already lists `.runtime/` — no new ignore rule needed).
 
 2. **Seed, resume, merge, or discard — in this decision order:**
 
@@ -100,17 +100,13 @@ Assemble the four context parts once, scoped to the `<pattern>`, and dispatch th
 }
 ```
 
-Read and write it with the suite's already-approved JSON tooling — `jq` (bash) / `ConvertFrom-Json` + `ConvertTo-Json` (pwsh) — no new dependency, no new script (`.project/library-manifest.md#Approved libraries (by purpose)`). Reading/writing one small JSON scratch file is exactly the kind of mechanical, non-judgment operation the suite already does inline with `jq` (e.g. `resolve-config.sh`'s own `jq -e .` validation) rather than wrapping in a dedicated script; the sibling git-invisible-scratch-file convention is `scripts/memory-mirror.sh:134-138`, applied here to a resumability checkpoint instead of a memory mirror. `accumulated.droppedCount` is the running tally of findings the Step 2.5 verify pass dropped, incremented per sub-path (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38). It survives a resume exactly like `findings`/`proposals` do **provided the checkpoint already carries the key** — a checkpoint written before this field existed is schema-stale and discarded rather than backfilled (the decision table above), so `droppedCount` is never missing on a checkpoint this pass actually resumes.
+Read and write it with the suite's already-approved JSON tooling — `jq` (bash) / `ConvertFrom-Json` + `ConvertTo-Json` (pwsh) — no new dependency, no new script (`.project/library-manifest.md#Approved libraries (by purpose)`). Reading/writing one small JSON scratch file is exactly the kind of mechanical, non-judgment operation the suite already does inline with `jq` (e.g. `resolve-config.sh`'s own `jq -e .` validation) rather than wrapping in a dedicated script; the sibling git-invisible-scratch-file convention is `scripts/memory-mirror.sh (resolve_target)`, applied here to a resumability checkpoint instead of a memory mirror. `accumulated.droppedCount` is the running tally of findings the Step 2.5 verify pass dropped, incremented per sub-path (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38). It survives a resume exactly like `findings`/`proposals` do **provided the checkpoint already carries the key** — a checkpoint written before this field existed is schema-stale and discarded rather than backfilled (the decision table above), so `droppedCount` is never missing on a checkpoint this pass actually resumes.
 
 `PROPOSALS: none` **and** `FINDINGS: none` (i.e. `accumulated.findings`/`accumulated.proposals` both empty once the loop above completes) is the clean, valid "nothing inconsistent" outcome (Step 4's empty state; that section's "what was checked" line reads Step 1's project-docs/domain-skills counts — resolved once, shared across every sub-path dispatch — plus the constant `swept-broad` app-grep descriptor from bullet 5 above, never a per-sub-path `SOURCES` set). A nonzero `accumulated.droppedCount` does not change this empty-state classification — the sweep still found no *surviving* inconsistency — but Step 4 still renders the drop-count line per `docs/write-up.md` §"Dropped-grounding count"; only a `droppedCount` of exactly zero renders no drop-count line at all.
 
-#### Known trade-off — clustering narrows to the sub-path
+#### Known limit: clustering is per sub-path
 
-Each per-sub-path dispatch clusters only **within that sub-path's own grep results** — `agents/coherence-reviewer.md` §"Sweep-mode" has the engine "gather its sites **across `sourceGlobs`**", and here the seed handed to any one dispatch **is** just that one sub-path, not the whole tree. A real standing-inconsistency pattern whose sites split across two or more top-level directories (e.g. 2 sites in `skills/` + 2 in `agents/` — 4 total, clearing the engine's ≥3-site cluster floor) can fall **under** that floor in *each* dispatch alone, even though a single whole-tree dispatch would have clustered all 4 sites together and cleared it. This is the deliberate cost of resumability at **directory granularity** — bounding every dispatch to one sub-path's cost so an interruption never re-derives more than one sub-path's context — traded against full cross-directory clustering fidelity in one pass. It does not affect any of this issue's acceptance criteria (all are checkpoint/worklist mechanics, not clustering fidelity); it is flagged here, not silently absorbed, as a known limitation worth weighing against a possible follow-up (e.g. a final cross-sub-path reconciliation pass) — out of scope for this issue.
-
-#### No concurrency-collision guard — low blast radius, not an oversight
-
-Two overlapping broad sweeps racing to write the same checkpoint is out of scope for this issue, deliberately: this is a **local, per-clone scratch file** (git-invisible, single developer's own working copy), not a shared or multi-writer store. The worst case of a race is a lost update to one sub-path's `done` mark, causing at most a **redundant re-dispatch** of that one sub-path on the next invocation — already covered by the malformed/stale-checkpoint fallback above (discard-and-reseed, or at worst one duplicate dispatch; never data loss, never a crash). A lock file or other mutual-exclusion guard would defend against a scenario whose downside is already bounded and self-healing, so it is not added here (least-code).
+Each broad-sweep dispatch clusters only within its own sub-path, so a pattern whose sites span top-level directories can fall under the ≥3-site floor in every dispatch and produce no proposal.
 
 ### Step 2.5 — Verify grounding, drop what fails
 
@@ -177,7 +173,7 @@ No clusters found, or every cluster **governed + conforming** (or a defensible d
 - **Hard-grounding carries through.** Every cluster site — every proposal `site` / `exemplar` / `diverging` and every drift `grounding` — cites a real `file:line` (or `.project/` section / `domainSkills` source); the engine dropped any ungroundable cluster (`agents/coherence-reviewer.md` §"The hard-grounding rule"). Step 2.5 is a second, orchestrator-side check on top of that emit-time rule — it mechanically re-verifies each `FINDINGS` grounding and drops any that fail both tiers (`docs/analyze-once.md` §"Verify grounding, drop what fails"; issue #38).
 - **Bounded, on demand.** The broad scan greps **within `sourceGlobs`** and runs **only on demand** — never on a per-change run, never a per-change substitute (`agents/coherence-reviewer.md` §"Sweep-mode"; the per-change path stays diff-keyed).
 - **Analyze once (per sub-path), distribute slices.** Step 1's config + `.project/` resolution is gathered once per skill invocation. The engine dispatch is once **per not-yet-done sub-path** on the broad path (once, total, on the narrowed path) — each individual dispatch still honors "once per review call" (`docs/analyze-once.md`); downstream routes get their minimal self-contained slice from the accumulated result — never a re-gather, re-analyze, or re-resolve.
-- **Broad sweep is resumable; narrowed sweep is untouched.** A broad sweep seeds/resumes a per-sub-path worklist checkpoint (`.milestone-config/.runtime/sweep-progress.json` — git-invisible, no new dependency, no new script); an interruption picks up at the next not-yet-done sub-path instead of re-scanning from zero, and a malformed/stale checkpoint discards and re-seeds rather than crashing. A narrowed (`<pattern>`) sweep keeps its original one-shot dispatch — the checkpoint file is never read or written on that path.
+- **Broad sweep is resumable; narrowed sweep is one-shot.** A broad sweep seeds/resumes a per-sub-path worklist checkpoint (`.milestone-config/.runtime/sweep-progress.json` — git-invisible, no new dependency, no new script); an interruption picks up at the next not-yet-done sub-path instead of re-scanning from zero, and a malformed/stale checkpoint discards and re-seeds rather than crashing. A narrowed (`<pattern>`) sweep dispatches once — the checkpoint file is never read or written on that path.
 - **Degraded environment still runs.** Thin/absent `.project/` or `.milestone-config/` reduces grounding and (on `conventions.md` absence) suppresses proposals + raises the one-time D17 nudge — never an error, never a stop.
 
 ## Output style
