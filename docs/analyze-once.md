@@ -14,8 +14,8 @@ efficiency)", l.33-40; §"Recorded decisions" l.114). Gather once, distribute
 slices.
 
 This doc specifies the **distribution mechanism only**. It is the contract the
-standalone `review` skill (#7) implements, and that the write-up format (#5) and
-the heal routing (#6) consume. It does not itself act — see
+standalone `review` skill implements, and that the write-up format and
+the heal routing consume. It does not itself act — see
 [Read-only engine, orchestrator acts](#read-only-engine-orchestrator-acts).
 
 ## The two halves of "once"
@@ -23,7 +23,7 @@ the heal routing (#6) consume. It does not itself act — see
 | Half | Who does it | Where it's specified |
 | --- | --- | --- |
 | Gather the **inputs** once (shared keys + `.project/` sections) | `scripts/resolve-config.{sh,ps1}` | [resolution.md](resolution.md) |
-| Produce the **analysis** once, then distribute slices | the orchestrator (the `review` skill, #7) | this doc |
+| Produce the **analysis** once, then distribute slices | the orchestrator (the `review` skill) | this doc |
 
 The first half feeds the second: the resolved keys and sections are part of the
 review context the orchestrator assembles before it runs the analysis.
@@ -38,12 +38,12 @@ this point (`BRIEF.md` l.35). The fifth — recall — is the **`review` path on
 | Part | Source | Resolved by |
 | --- | --- | --- |
 | **The built diff** — or, for a sweep, the **sweep seed** (no diff) | per-change: the branch / PR under review, against `integrationBranch`. For a sweep there is **no diff** — the mandatory first context part is the sweep seed: a broad scan of all `sourceGlobs` (default), or one named `<pattern>` | the orchestrator |
-| **The resolved `.project/` sections** | the cited `conventions.md` / `design-system.md` / `library-manifest.md` / `design-philosophy.md` sections, verbatim | `resolve-config.{sh,ps1} docs …` (issue #2) — read once |
-| **The `domainSkills` pointers** | the stack's best-practice sources from the driver profile | `resolve-config.{sh,ps1} keys …` (issue #2) — read once |
+| **The resolved `.project/` sections** | the cited `conventions.md` / `design-system.md` / `library-manifest.md` / `design-philosophy.md` sections, verbatim | `resolve-config.{sh,ps1} docs …` — read once |
+| **The `domainSkills` pointers** | the stack's best-practice sources from the driver profile | `resolve-config.{sh,ps1} keys …` — read once |
 | **The bounded grep results** — diff-keyed (per-change) / seed-or-broad-keyed on demand (sweep) | greps within `sourceGlobs` for the specific symbols the diff introduces — never a whole-repo scan (on the per-change path; for the opt-in sweep it is a seed/broad-keyed scan over `sourceGlobs` on demand — still bounded, still hard-grounded) | the orchestrator (diff-keyed per-change; seed/broad-keyed on demand for the sweep) |
 | **The recalled prior write-ups (advisory)** — **`review` path only** | the prior coherence write-up bodies matched (diff-keyed) to the diff's touched paths, handed to the engine as advisory context (verbatim `SECTION-BEGIN … SECTION-END`-style payloads), never re-read after this point — **gather mechanics in [recall.md](recall.md)** (the single source) | the orchestrator (`review` skill), via `scripts/memory-mirror.{sh,ps1} --recall` — read once (`docs/recall.md` §"Step 2 — gather the recall read-back (once)") |
 
-This is the **same** review context the #3 engine documents under "What you
+This is the **same** review context the review engine (`agents/coherence-reviewer.md`) documents under "What you
 receive" — the orchestrator builds it and hands it to the engine; the engine does
 not re-read whole docs or re-resolve the shared keys.
 
@@ -55,7 +55,7 @@ parts (the sweep seed in place of the diff).
 
 ## Step 2 — Produce the consolidated analysis (once)
 
-The orchestrator dispatches the read-only review engine (#3,
+The orchestrator dispatches the read-only review engine (defined in
 `agents/coherence-reviewer.md`) **once** against that context. The engine returns
 its structured `FINDINGS` block **and** a parallel `PROPOSALS` block — together
 those two blocks **are** the consolidated analysis. Nothing in this layer re-runs
@@ -94,7 +94,7 @@ below.
 The `PROPOSALS: none` sentinel (the parallel inline scalar) is the no-proposal
 outcome. The two blocks are **independent**: a run can carry findings with no
 proposals, proposals with no findings, both, or neither. They also route to
-**different lanes** — `FINDINGS` route by drift size (#6), but a **proposal is
+**different lanes** — `FINDINGS` route by drift size (heal routing, `docs/heal-routing.md`), but a **proposal is
 not drift-routed**: it goes to a **config-only PR** (`skills/review/SKILL.md`
 Step 3), targeting `integrationBranch` and human-gated, independent of the
 drift buckets (`docs/heal-routing.md` §"Convention proposals are a separate
@@ -103,9 +103,9 @@ lane").
 ## Verify grounding, drop what fails
 
 Before a finding is distributed as a slice (Step 3, below), rendered in the
-write-up (#5), or routed by drift size (#6), its single `grounding` ref is
-mechanically verified — a plain local check, never a re-grep or a re-dispatch
-(issue #38). This is the **one** contract both `skills/review/SKILL.md` and
+write-up, or routed by drift size (heal routing, `docs/heal-routing.md`), its single `grounding` ref is
+mechanically verified — a plain local check, never a re-grep or a re-dispatch.
+This is the **one** contract both `skills/review/SKILL.md` and
 `skills/sweep/SKILL.md` implement as their own **Step 2.5 — "Verify grounding,
 drop what fails"**, positioned immediately after their Step 2 engine dispatch
 and before their Step 3/4/5 consume `FINDINGS`. It is specified once, here,
@@ -190,7 +190,7 @@ distributed as a slice, never rendered in the write-up, never routed. This is a
 mechanical drop, not a merge-blocking verdict — coherence heals, it does not
 gate (`.project/design-philosophy.md#Error & failure philosophy`). The pass
 tallies the run's drop count (per sub-path on a checkpointed broad sweep — see
-below); the write-up (#5) states it verbatim as **"N findings dropped:
+below); the write-up states it verbatim as **"N findings dropped:
 grounding did not resolve"** when the count is greater than zero, and renders
 nothing when it is zero.
 
@@ -271,9 +271,9 @@ hand-authors the milestone (`BRIEF.md` §"It heals, it doesn't gate" l.48); it
 hands the feeder a brief and the feeder does the rest.
 
 > The small/medium bucket (current-milestone issues) is the heal-routing layer's
-> concern (#6). This doc defines the two slice **shapes** the brief calls out
+> concern. This doc defines the two slice **shapes** the brief calls out
 > explicitly — the inline-fix slice and the large-drift slice. The routing
-> decision (which finding takes which route, keyed off `severity`) belongs to #6;
+> decision (which finding takes which route, keyed off `severity`) belongs to heal routing (`docs/heal-routing.md`);
 > this doc guarantees that **whatever** route a finding takes, the slice handed
 > across is the minimal, self-contained one for that route.
 
@@ -282,7 +282,7 @@ hands the feeder a brief and the feeder does the rest.
 A slice that would require its consumer to re-read a doc, re-grep the repo, or
 re-derive a finding from raw sources is **under-specified** — and an
 under-specified slice is an **orchestration error**, not something shipped
-(`BRIEF.md` l.35; issue #4 acceptance criteria, "Error/failure path").
+(`BRIEF.md` l.35).
 
 Before a slice is dispatched, it must satisfy the route's shape:
 
@@ -304,7 +304,7 @@ The consolidated analysis is produced **exactly once per review call**, no matte
 how many findings it contains or how many downstream dispatches are derived from
 it (`BRIEF.md` l.114, "keeps token cost flat as findings fan out").
 
-- **N findings, M dispatches, one analysis.** The engine (#3) is dispatched once.
+- **N findings, M dispatches, one analysis.** The engine is dispatched once.
   Whether it returns zero findings or twenty, and whether those route into one
   inline fix or several inline fixes plus a feeder handoff, the analysis is built
   a single time. M slices are *derived from* that one artifact — they never
@@ -338,8 +338,8 @@ there is **no drift to distribute**:
   either way.
 
 This is a **valid, non-error terminal outcome** — the change fits how the app is
-already built, so there is no drift to route (`BRIEF.md` §"degrade cleanly" l.89;
-issue #4 acceptance criteria, "Empty state — zero findings"). It is never an
+already built, so there is no drift to route (`BRIEF.md` §"degrade cleanly" l.89).
+It is never an
 error and never a failure; it is the success case where nothing needs healing.
 Consistent with the suite's absent-means-skip / clean-degradation convention and
 with the engine's own `FINDINGS: none` being a positive check, not a gap.
@@ -352,18 +352,18 @@ does not change the terminal outcome.
 
 ## Read-only engine, orchestrator acts
 
-The consolidated analysis is produced by the **read-only review engine** (#3): it
+The consolidated analysis is produced by the **read-only review engine**: it
 returns findings **and** proposals (both grounded) and acts on nothing else — it
 heals nothing, writes no files, opens no issues, opens no PR, runs no `gh`
 (`BRIEF.md` §"Recorded decisions" l.113).
 
 The **heal action** — re-dispatching the implementer for an inline fix, opening
 issues, handing the feeder a brief — is performed by the **orchestrator** (the
-`review` skill, #7, or the driver in the embedded path), *not* by a read-only
+`review` skill, or the driver in the embedded path), *not* by a read-only
 subagent. This doc specifies the **distribution mechanism** that sits between the
 two: how the one analysis becomes the minimal slices the orchestrator's heal
 actions consume. The mechanism itself does not act — it shapes and validates
-slices; #6 routes them and #7 dispatches the heal.
+slices; heal routing (`docs/heal-routing.md`) routes them and the `review` skill dispatches the heal.
 
 This keeps the same read-only-agent / orchestrator-acts split the rest of the
 suite uses (triage / design-reviewer / implementer stay read-only; the driver
@@ -373,7 +373,7 @@ acts).
 
 ### File scope is orchestrator-derived
 
-The inline-fix slice's **exact file scope** is *not* a field in the #3 `FINDINGS`
+The inline-fix slice's **exact file scope** is *not* a field in the review engine's `FINDINGS`
 block. The engine returns the finding's `symbol` (the diff symbol it's keyed to)
 and its `grounding` ref; the orchestrator derives the precise file scope from
 those two against the diff it already holds — the path(s) and region the
@@ -410,7 +410,7 @@ slice to the route's fixed shape, validated against the
   part (diff-keyed, read once via `scripts/memory-mirror.{sh,ps1} --recall`,
   handed to the engine as advisory context, never re-read; mechanics in
   [recall.md](recall.md)) — is assembled **once** per review call.
-- The consolidated **analysis** (the #3 engine's `FINDINGS` **and** `PROPOSALS`
+- The consolidated **analysis** (the review engine's `FINDINGS` **and** `PROPOSALS`
   blocks) is produced **once** per review call — regardless of N findings or M
   dispatches.
 - Each downstream dispatch gets a **minimal, self-contained slice** derived from
