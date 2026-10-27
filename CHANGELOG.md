@@ -2,6 +2,43 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop.)
 
+## v0.5.1 - prompt-audit remediation
+
+**Theme:** the agent, both skills, and the seven contract docs now name components instead of build-issue numbers, state behavior instead of deltas from an earlier version, and carry one bold run per line, so the prompt reads the same to a model that never saw the build history. No behavior changes.
+
+### ✨ Prompt audit
+
+| Issue | PR | What |
+|---|---|---|
+| #118 Rename the Sweep-mode heading to drop its classification-path tail | #134 | `agents/coherence-reviewer.md` heading is now `## Sweep-mode`; every cite to it moved in the same change. Carries the `0.5.1` bump and its `.project/conventions.md#Versioning` citation. |
+| #119 Name the components behind the build-issue numbers in the review skill and ratchet its ceiling | #134 | `skills/review/SKILL.md` names each component where it cited `#N`. Ceiling holds at 4100: 3943 CI words × 1.05 rounds to 4200, above it. |
+| #120 Name the components behind the build-issue numbers in the analyze-once contract | #134 | `docs/analyze-once.md` names each component where it cited `#N`. |
+| #121 Name the components behind the build-issue numbers in the heal-routing, write-up, and recall contracts | #134 | Same pass over `docs/heal-routing.md`, `docs/write-up.md`, `docs/recall.md`. |
+| #122 Name the components behind the build-issue numbers in the review engine | #134 | Same pass over `agents/coherence-reviewer.md`. |
+| #123 Name the components behind the build-issue numbers in the sweep skill and ratchet its ceiling | #134 | Same pass over `skills/sweep/SKILL.md`; sweep ceiling lowered 4200 → 3900, with the test expectations and five sweep fixtures moved to match. |
+| #124 State the review engine's behavior instead of describing it as a delta | #134 | Six "unchanged" / "adds no new lane" sites in the engine now state what the engine does. |
+| #125 State the sweep skill's behavior instead of describing it as a delta, and ratchet its ceiling | #134 | `#### Narrowed sweep — one dispatch` heading and its dispatch line state behavior; ceiling re-derived and held at 3900. |
+| #126 Bring the review engine's emphasis register to one bold run per line | #134 | Markers moved or dropped only, plus `NOT` / `AND` lowercased; no word changed. |
+| #127 Reduce skills/review/SKILL.md's emphasis register and ratchet its word ceiling | #134 | Same pass over the review skill, including the `(not built here)` cites; ceiling holds at 4100. |
+| #128 Replace the coherence-reviewer agent description and re-derive its line citations | #134 | The agent description is one 70-word paragraph (was 129 words plus an `<example>` block), so every session's agent roster carries less. |
+| #129 Bring the sweep skill's emphasis register to one bold run per line and ratchet its ceiling | #134 | Same pass over the sweep skill; ceiling holds at 3900. |
+| #130 State behavior instead of deltas across the contract docs | #134 | Nine delta sites across five contract docs restated as behavior. |
+| #131 Bring the seven contract docs' emphasis register to one bold run per line | #134 | Same pass over the seven contract docs; the two `(NOT built here)` headings are now `(not built here)`, with every cite moved. |
+
+### Consumer notes (upgrading from v0.5.0)
+
+- **Renamed headings.** `agents/coherence-reviewer.md` §"Sweep-mode", `docs/heal-routing.md` §"The deferred boundary — `feeder → driver` auto-handoff (not built here)", and `docs/recall.md` §"The deferred boundary — sweep recall (not built here)". A cite to the old text outside this repo no longer resolves.
+- **Sweep word ceiling is 3900** (was 4200). A fork adding text to `skills/sweep/SKILL.md` meets it sooner.
+- **No schema changes** to `.milestone-config/driver.json`.
+
+### ⚖️ Post-run audit trail
+
+Judgment-call PRs: none.
+
+- No CI gate checks the registers this release enforces: a new `#N`, all-caps emphasis word, or second bold run on a line passes `check-size-budgets.sh` and `check-version-citation.sh`.
+- `skills/review/SKILL.md` is 4086 of 4100 words by local `wc -w`; the next 15-word addition fails the local gate.
+- The size-budget fixtures pin each ceiling's word count, so every future ratchet regenerates them.
+
 ## v0.5.0 — adopt the `path (anchor)` citation form
 
 **Theme:** a citation pinned to a line number is invalidated by any edit landing above it, silently. This release changes both sides of that in this plugin: the engine's return-block slots now offer an anchor form keyed to a literal string, the exemplar a proposal PR writes into `.project/conventions.md` may carry one, a composed issue body may not truncate one away, and the Step 2.5 grounding check gains an anchor path that resolves through the driver's shipped resolver, alongside the in-range line read it keeps. The format and the resolver shipped in `milestone-driver` v1.19.0 and are cited here, never re-derived and never reimplemented.
