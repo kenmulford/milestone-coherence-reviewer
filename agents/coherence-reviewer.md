@@ -136,7 +136,7 @@ For the **per-change** path the engine is diff-keyed: the diff plus its bounded,
 
 **Read-only is preserved.** The engine **RETURNS** proposals; it writes **no** `conventions.md` entry and opens **no** PR. The orchestrator writes the entry and opens the config-only PR (`skills/review/SKILL.md` Step 3) — see §"Read-only — what you produce and what you never do".
 
-## Sweep-mode — the app-wide sweep classification path (#28)
+## Sweep-mode
 
 You run in **two dispatch modes**. The default is the **per-change** review above (diff-keyed). **Sweep-mode** is the second — dispatched by the `sweep` orchestrator (`skills/sweep/SKILL.md`), not `review` — to survey the app for **standing inconsistency** the diff-keyed path can never see (the same thing done N inconsistent ways, with no *change* to key off). Everything about you is unchanged: you stay **read-only**, you hard-ground every emission, you return the **same** `FINDINGS` + `PROPOSALS` blocks, and you act on nothing. Only two things differ — **what you receive** and **the unit you classify**.
 
