@@ -232,7 +232,7 @@ nothing changed"** — and is never silence or an empty output (`BRIEF.md` §"Wh
   redo. The clean-fit write-up states what was checked (read from the `SOURCES`
   lines: which of app-grep / project-docs / domain-skills were available) so the
   reader can tell a genuine clean fit from a thin-grounding run.
-- For a **sweep** run the clean-fit headline additionally states **what was
+- For a sweep run the clean-fit headline additionally states **what was
   scanned** — the swept scope, "scanned: broad" or "scanned: pattern
   `<pattern>`", read from the sweep-valued `REVIEWED` / `SOURCES.app-grep` header
   fields (`agents/coherence-reviewer.md` §"Sweep-mode"). This is the render
@@ -265,7 +265,7 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 A supplemental mirror whose target is unavailable is **skipped, noted, and never
 allowed to suppress the primary inline summary** (`BRIEF.md` l.89, l.96; the
 suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md` §"Keys" (the `Absent →` rows),
-`milestone-feeder/skills/plan/SKILL.md (Step 0: Read config + project docs (best-effort), once-per-run)`).
+`milestone-feeder/skills/plan/SKILL.md` §"Step 0: Read config + project docs (best-effort), once-per-run outer boundary").
 
 | Unavailable target | Behavior |
 | --- | --- |

@@ -2,8 +2,8 @@
 
 The [review engine](../agents/coherence-reviewer.md) returns grounded
 findings; the [analyze-once](analyze-once.md) layer shapes each into a
-minimal, self-contained slice. This doc is the third piece: it decides **where
-each fix lands** — and it makes that decision on **one key only, the drift
+minimal, self-contained slice. This doc is the third piece: it decides where
+each fix lands — and it makes that decision on **one key only, the drift
 size** — without ever blocking the active issue/PR from merging.
 
 That single invariant is what makes the tool *heal* rather than *gate*: it fixes
@@ -74,9 +74,9 @@ and `large` route identically in either mode.
   **only** the [inline-fix slice](analyze-once.md#the-inline-fix-slice-to-the-implementer-re-dispatch)
   for that one finding — the finding + its citation + the exact file scope — not
   the whole analysis (`analyze-once.md`; `BRIEF.md` l.37).
-- **Standalone mode (no driver build loop).** There is **no build loop to
-  re-dispatch the implementer into**, so the inline route is unavailable. A
-  trivial finding **degrades to a small issue** — the same destination as
+- **Standalone mode (no driver build loop).** There is no build loop to
+  re-dispatch the implementer into, so the inline route is unavailable. A
+  trivial finding degrades to a small issue — the same destination as
   `drift-small` (milestone-attached or backlog, per the
   [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption)
   below), opened so the fix is captured rather than applied in place
@@ -155,7 +155,7 @@ the change under review merges either way.
 
 ## Never a gate — the merge proceeds regardless
 
-The router runs **after the change is built**, and its output **never feeds a
+The router runs after the change is built, and its output **never feeds a
 merge decision**. Whatever the routing decision — trivial, small/medium, or
 large — the active issue/PR still merges (`BRIEF.md` l.42-44, l.50):
 

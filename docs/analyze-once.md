@@ -94,8 +94,8 @@ below.
 The `PROPOSALS: none` sentinel (the parallel inline scalar) is the no-proposal
 outcome. The two blocks are **independent**: a run can carry findings with no
 proposals, proposals with no findings, both, or neither. They also route to
-**different lanes** — `FINDINGS` route by drift size (heal routing, `docs/heal-routing.md`), but a **proposal is
-not drift-routed**: it goes to a **config-only PR** (`skills/review/SKILL.md`
+different lanes — `FINDINGS` route by drift size (heal routing, `docs/heal-routing.md`), but a **proposal is
+not drift-routed**: it goes to a config-only PR (`skills/review/SKILL.md`
 Step 3), targeting `integrationBranch` and human-gated, independent of the
 drift buckets (`docs/heal-routing.md` §"Convention proposals are a separate
 lane").
@@ -331,14 +331,14 @@ there is **no drift to distribute**:
 - No slices are derived.
 - No downstream subagent is dispatched.
 - The review call ends — **once the independent `PROPOSALS` lane is also
-  spent**. `FINDINGS: none` speaks to the **drift** lane only; a run can still
+  spent**. `FINDINGS: none` speaks to the drift lane only; a run can still
   carry a `PROPOSALS` entry (the two blocks are independent), which routes to its
   config-only PR (`skills/review/SKILL.md` Step 3) regardless. The fully-clean
   terminal is `FINDINGS: none` **and** `PROPOSALS: none` — nothing to distribute
   either way.
 
 This is a **valid, non-error terminal outcome** — the change fits how the app is
-already built, so there is no drift to route (`BRIEF.md` §"degrade cleanly" l.89).
+already built, so there is no drift to route (`BRIEF.md (degrade cleanly)`).
 It is never an
 error and never a failure; it is the success case where nothing needs healing.
 Consistent with the suite's absent-means-skip / clean-degradation convention and

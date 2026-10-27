@@ -1,7 +1,7 @@
 # Issue templates — shaping the spin-out body to the consumer repo's convention
 
 [Heal routing](heal-routing.md) decides **where** each fix lands. This doc is the
-piece next to it: for the routes that open **a new issue**, it decides **what
+piece next to it: for the routes that open a new issue, it decides **what
 that issue's body looks like** — so a spun-out finding reads like every other
 issue in the consumer's backlog instead of like a third structure a triager has
 to learn.

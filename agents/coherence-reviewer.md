@@ -95,7 +95,7 @@ PROPOSALS:                                       # when nothing to propose, the 
     sites: [<path:line | path (anchor)>, ...]          # the >=3 consistent sites (agree), or the cluster sites (disagree)
     disagree: yes | no                                 # yes = a mixed/disagreeing cluster; the rule recommends a grounded winner
     diverging: [<path:line | path (anchor)>, ...]      # only when disagree: yes — the sites differing from the recommended winner (NOT auto-changed)
-    source: per-change | sweep                         # per-change = this diff-keyed review; sweep = the app-wide sweep (#28) feeds this same lane
+    source: per-change | sweep                         # per-change = this diff-keyed review; sweep = the app-wide sweep feeds this same lane
     grounding: <exactly one — domainSkills:<source> | <path>:<line> | <path> (<anchor>) | .project/<doc>#<section>>
 ```
 

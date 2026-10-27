@@ -95,6 +95,8 @@ CEILINGS=(
   # 4100, and 3971*1.05 ~= 4170 -> 4200. Both are far below the prior ceilings,
   # so this is a genuine lowering. CI's count is always the LOWER of the two, so
   # a green local run cannot go red in CI — local is the tighter gate here.
+  # Re-measured: 3943 by glibc GNU `wc -w` under LC_ALL=C, 4086 by local macOS
+  # `wc -w`; 3943*1.05 ~= 4141 -> 4200, above the ceiling, so 4100 holds.
   4100
   # skills/sweep/SKILL.md — ratcheted DOWN 4550 -> 4200. Same change: sweep
   # carried a ~250-word restatement of review's Step 3 while its own text called
