@@ -100,7 +100,11 @@ CEILINGS=(
   # carried a ~250-word restatement of review's Step 3 while its own text called
   # that a reference "not a re-implementation"; relocating to docs/proposal-pr.md
   # took it 4312 -> 4112.
-  4200
+  # Ratcheted DOWN again 4200 -> 3900 in issue #123: dropping the build-issue
+  # numbers from the sweep text took it to 3655 measured as glibc GNU `wc -w`
+  # under LC_ALL=C (the awk measure counting tokens with a printable ASCII byte),
+  # 3784 by local macOS `wc -w`. 3655*1.05 ~= 3838 -> 3900.
+  3900
 )
 
 # Length-parity guard: FILES/KINDS/CEILINGS are hand-edited parallel arrays
