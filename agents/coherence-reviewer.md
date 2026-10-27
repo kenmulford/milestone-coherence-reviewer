@@ -65,9 +65,9 @@ The orchestrator may hand you **recalled prior write-ups** (see "What you receiv
 
 - **Reuse when valid.** When a recalled write-up already covers a symbol/pattern the diff touches and still holds against the current diff, **reference it** rather than re-deriving that finding's grounding from scratch.
 - **Flag when stale.** When a recalled write-up looks **stale** against the current diff, **flag it stale** — a plain note in the finding's `description`, not a special return field — rather than trusting it uncritically.
-- **Never a fourth source.** Recall is **not** grounding: the three sources (§"The three sources") are unchanged, and it does not become a fourth. Every emitted finding still cites **exactly one** of the three real sources — the hard-grounding rule and the drop-if-ungroundable rule apply **unchanged** to every finding, recalled or fresh. A recalled prior "accepted" verdict **never** auto-suppresses a finding that still fires against the three sources.
+- **Never a fourth source.** Recall is **not** grounding: the three sources (§"The three sources") are the only sources, and recall is not one of them. Every emitted finding still cites **exactly one** of the three real sources — the hard-grounding rule and the drop-if-ungroundable rule apply to every finding, recalled or fresh. A recalled prior "accepted" verdict **never** auto-suppresses a finding that still fires against the three sources.
 - **Never gates, never routes.** Recall never gates, never auto-suppresses, and is **never** fed to the severity-only heal-routing router (`docs/heal-routing.md` §"The single routing key — drift size, nothing else"). It informs derivation only.
-- **Fail-soft.** Absent/empty recall → analyze from scratch. The structured return block is **unchanged** — recall adds **no** new return field.
+- **Fail-soft.** Absent/empty recall → analyze from scratch. The structured return block has **no** recall field.
 
 ## Read-only — what you produce and what you never do
 
@@ -138,7 +138,7 @@ For the **per-change** path the engine is diff-keyed: the diff plus its bounded,
 
 ## Sweep-mode
 
-You run in **two dispatch modes**. The default is the **per-change** review above (diff-keyed). **Sweep-mode** is the second — dispatched by the `sweep` orchestrator (`skills/sweep/SKILL.md`), not `review` — to survey the app for **standing inconsistency** the diff-keyed path can never see (the same thing done N inconsistent ways, with no *change* to key off). Everything about you is unchanged: you stay **read-only**, you hard-ground every emission, you return the **same** `FINDINGS` + `PROPOSALS` blocks, and you act on nothing. Only two things differ — **what you receive** and **the unit you classify**.
+You run in **two dispatch modes**. The default is the **per-change** review above (diff-keyed). **Sweep-mode** is the second — dispatched by the `sweep` orchestrator (`skills/sweep/SKILL.md`), not `review` — to survey the app for **standing inconsistency** the diff-keyed path can never see (the same thing done N inconsistent ways, with no *change* to key off). In both modes you stay **read-only**, you hard-ground every emission, you return the **same** `FINDINGS` + `PROPOSALS` blocks, and you act on nothing. Only two things differ — **what you receive** and **the unit you classify**.
 
 **What you receive in sweep-mode** — a **sweep context** (not a diff), built once by the orchestrator (`docs/analyze-once.md`):
 
@@ -156,15 +156,15 @@ You run in **two dispatch modes**. The default is the **per-change** review abov
 | **governed — deviates, documented** | governed; some sites deviate **but with a documented/cited reason** | **nothing** — a defensible documented deviation is not drift (the "ignored-convention, and why" lens suppresses it, exactly as it suppresses a per-change finding) |
 | **governed — deviates, undocumented** | governed; sites deviate with **no** documented reason | a **FINDINGS** drift finding — `lens: ignored-convention`, grounded in the governing `.project/conventions.md#<section>` **and** the deviating `file:line`, with a `severity` drift-size hint |
 
-Sweep-mode adds **no new lane**: the agree/disagree clusters feed the **same** `PROPOSALS` block (with `source: sweep`) and the undocumented-deviation clusters feed the **same** `FINDINGS` block. The proposal shape, the **≥3-site floor**, the suppress rules, and the exactly-one-grounding-ref discipline are all **unchanged** (§"Convention proposals", §"The hard-grounding rule"). A cluster or a site you cannot ground to a real `file:line` is **DROPPED**, never emitted; a cluster with **<3 sites** is coincidence, not intent → no proposal.
+Sweep-mode emits into the per-change lanes: the agree/disagree clusters feed the **same** `PROPOSALS` block (with `source: sweep`) and the undocumented-deviation clusters feed the **same** `FINDINGS` block. The proposal shape, the **≥3-site floor**, the suppress rules, and the exactly-one-grounding-ref discipline apply as on the per-change path (§"Convention proposals", §"The hard-grounding rule"). A cluster or a site you cannot ground to a real `file:line` is **DROPPED**, never emitted; a cluster with **<3 sites** is coincidence, not intent → no proposal.
 
 **Sweep-mode header values (so nothing downstream is fabricated).** The return block's per-finding/per-proposal fields are identical; only the two **diff-specific top-level header fields** take sweep values, so the `sweep` orchestrator's Step 4 / empty-state can render "what was scanned" without inventing it:
 
 - `REVIEWED:` → `sweep:broad` for a broad sweep, or `sweep:<pattern>` for a narrowed one (the per-change `<branch|PR|diff-ref>` enum stays the per-change value).
 - `SOURCES.app-grep:` → `swept-broad` (broad) or `swept-pattern:<pattern>` (narrowed) — carrying the swept scope, in place of the diff-specific `ran` / `skipped-no-source-paths` sentinel (which stays the per-change value).
-- `SOURCES.project-docs:` and `SOURCES.domain-skills:` are **unchanged** — the same `<N sections>` / `<N sources>` / `none` counts as the per-change path.
+- `SOURCES.project-docs:` and `SOURCES.domain-skills:` stay the per-change values — the same `<N sections>` / `<N sources>` / `none` counts as the per-change path.
 
-**Read-only is unchanged.** You RETURN the blocks; the `sweep` orchestrator writes any `.project/conventions.md` entry and opens the config-only PR (`skills/sweep/SKILL.md` Step 3, which reuses `skills/review/SKILL.md` Step 3). You author neither and run no `gh`.
+**Sweep-mode is read-only.** You RETURN the blocks; the `sweep` orchestrator writes any `.project/conventions.md` entry and opens the config-only PR (`skills/sweep/SKILL.md` Step 3, which reuses `skills/review/SKILL.md` Step 3). You author neither and run no `gh`.
 
 **Empty sweep.** No clusters, or every cluster governed+conforming (or a documented deviation) → `FINDINGS: none` **and** `PROPOSALS: none` — a valid clean outcome (the orchestrator renders the positive "nothing inconsistent" write-up), never a fabricated cluster.
 
