@@ -35,10 +35,10 @@ across `scripts/resolve-config.{sh,ps1}` and the suite's mirror row):
 | Step | How |
 |---|---|
 | invoke | `scripts/memory-mirror.<sh\|ps1> --recall --repo-root <REPO_ROOT> -- <the diff's touched paths>` — the touched paths from `git diff <integrationBranch>...<head> --name-only` |
-| parse ONCE | read recall's documented TAB record stream a **single** time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
-| hand off | for each matched entry, wrap its **verbatim body lines** as a `SECTION-BEGIN … SECTION-END`-style payload — the **same** verbatim-payload shape the resolved `.project/` sections use (`skills/review/SKILL.md` Step 1 item 2) — as the engine's fifth advisory context part. **Never** hand the engine the raw TAB stream |
-| empty state | `entries=0`, or the `NONE` sentinel, with **exit 0** → the recall part is empty/absent; the engine analyzes from scratch (Step 4 renders the "no related prior write-ups found" note). A store that is **absent / empty / unreadable is this exit-0 empty-state — NOT a failure** (`scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED)`; the `.ps1` twin) |
-| failure state | ONLY a genuine invocation failure — a **nonzero exit** from a missing script/binary, a host-detection failure, or the **exit-2** bad-usage case — is a recall failure: note recall is unavailable and proceed exactly as if recall did not exist (analyze from scratch), fail-soft, never crash, never block the merge (`.project/design-philosophy.md#Error & failure philosophy`). Model the note on the Step 4 mirror table's `MIRROR-FAILED …` skip-and-note, scoped per this row |
+| parse once | read recall's documented TAB record stream a single time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
+| hand off | for each matched entry, wrap its verbatim body lines as a `SECTION-BEGIN … SECTION-END`-style payload — the same verbatim-payload shape the resolved `.project/` sections use (`skills/review/SKILL.md` Step 1 item 2) — as the engine's fifth advisory context part. **Never** hand the engine the raw TAB stream |
+| empty state | `entries=0`, or the `NONE` sentinel, with exit 0 → the recall part is empty/absent; the engine analyzes from scratch (Step 4 renders the "no related prior write-ups found" note). A store that is **absent / empty / unreadable is this exit-0 empty-state — not a failure** (`scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED)`; the `.ps1` twin) |
+| failure state | Only a genuine invocation failure — a **nonzero exit** from a missing script/binary, a host-detection failure, or the exit-2 bad-usage case — is a recall failure: note recall is unavailable and proceed exactly as if recall did not exist (analyze from scratch), fail-soft, never crash, never block the merge (`.project/design-philosophy.md#Error & failure philosophy`). Model the note on the Step 4 mirror table's `MIRROR-FAILED …` skip-and-note, scoped per this row |
 
 The matched entries are handed to the read-only
 [coherence-reviewer](../agents/coherence-reviewer.md) engine as the fifth,
@@ -56,7 +56,7 @@ explicit statement, never an absent output). It is rendered at
 | Branch | Render |
 |---|---|
 | `entries=<N>`, N > 0 | a short note **referencing the matched prior write-up(s)** that informed the analysis |
-| N = 0, the `NONE` sentinel, or recall **unavailable** (the failure state above) | the explicit **"no related prior write-ups found"** note |
+| N = 0, the `NONE` sentinel, or recall **unavailable** (the failure state above) | the explicit "no related prior write-ups found" note |
 
 This is a **procedural status note** — like the D17 `milestone-bootstrapper`
 nudge and the deferred-boundary statement — **not** an engine-field content
@@ -130,17 +130,17 @@ A matched prior write-up is **context only**, never a verdict input:
   `PROPOSALS` blocks and never blocks the merge (`BRIEF.md` §"It heals, it
   doesn't gate" l.42-52; `.project/design-philosophy.md#Error & failure
   philosophy` "Coherence heals; it never gates"; `docs/heal-routing.md` §"Never a gate — the merge proceeds regardless").
-- **It is never fed to the router.** A recall match is **not** an input to the
+- **It is never fed to the router.** A recall match is not an input to the
   `severity`-keyed heal-routing decision — it joins the same excluded class as
   heal-routing's "Tempting input" table (`BRIEF.md` §"Recorded decisions" l.109 —
   heals, never gates, routes by drift size only; `docs/heal-routing.md` §"The
   single routing key — drift size, nothing else" l.25-39). Recall informs the
   reader; it never moves where a fix lands.
 
-### The deferred boundary — sweep recall (NOT built here)
+### The deferred boundary — sweep recall (not built here)
 
 This contract covers the **`review` flow's** recall only. **Sweep-mode recall is
-NOT built in this milestone** (mirroring `docs/heal-routing.md` §"The deferred boundary — `feeder → driver` auto-handoff (NOT built here)"). A sweep run receives a **sweep context, not a diff**
+not built in this milestone** (mirroring `docs/heal-routing.md` §"The deferred boundary — `feeder → driver` auto-handoff (not built here)"). A sweep run receives a **sweep context, not a diff**
 (`agents/coherence-reviewer.md` §"Sweep-mode"), so the diff-keyed
 match above is **undefined** there — a future sweep hookup would need its own
 match-key decision. Documented, not implemented.
@@ -159,7 +159,7 @@ match-key decision. Documented, not implemented.
   TAB record stream is parsed **once**, `entries=<N>` read from SUMMARY, matched
   bodies handed to the engine as verbatim `SECTION-BEGIN … SECTION-END`-style
   advisory payloads — never the raw stream, never re-read.
-- **Diff-keyed match.** Reads the **same** detect-or-fallback target the write
+- **Diff-keyed match.** Reads the same detect-or-fallback target the write
   path resolves (`scripts/memory-mirror.sh` `resolve_target()` l.135-172) and
   surfaces any prior entry whose recorded `<path>:<line>` grounding intersects
   the diff's touched paths — flat cost, keyed to what the change touches.

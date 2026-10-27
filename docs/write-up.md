@@ -21,7 +21,7 @@ re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 
 ## What the write-up renders from (no re-derivation)
 
-The write-up is built **entirely** from the engine's `FINDINGS` **and**
+The write-up is built **entirely** from the engine's `FINDINGS` and
 `PROPOSALS` blocks, handed across as the analyze-once analysis, refined by the
 Step 2.5 verify pass (`docs/analyze-once.md` §"Verify grounding, drop what
 fails") before either block reaches the renderer. Every per-finding
@@ -74,11 +74,11 @@ section renders **only** from that block's fields (plus the live PR link the
 orchestrator opened for that proposal — a real artifact, not a fabricated
 claim), and `PROPOSALS: none` renders **nothing** — never a false proposal.
 
-For a **sweep** run the write-up also renders the **swept scope** — read from the
+For a sweep run the write-up also renders the **swept scope** — read from the
 two sweep-valued top-level header fields (`REVIEWED: sweep:broad | sweep:<pattern>`
 and/or `SOURCES.app-grep: swept-broad | swept-pattern:<pattern>`,
 `agents/coherence-reviewer.md` §"Sweep-mode") — surfaced as **"scanned: broad"**
-or **"scanned: pattern `<pattern>`"**. This is a **parallel case**, not a change
+or **"scanned: pattern `<pattern>`"**. This is a parallel case, not a change
 to the per-change render path: a per-change run carries the per-change
 `REVIEWED` / `SOURCES.app-grep` values and renders no scanned-scope line. These
 are engine fields, so the "renders only from engine fields" contract still holds —
@@ -132,7 +132,7 @@ review. Quote the title and body so the line pastes and runs as-is.
 ## Proposed convention — rendered from the `PROPOSALS` block
 
 Where the per-finding items above render the drift (`FINDINGS`), the write-up
-**also** renders a **Proposed convention** section — one item per entry in the
+also renders a **Proposed convention** section — one item per entry in the
 engine's `PROPOSALS` block (`agents/coherence-reviewer.md` §"Convention
 proposals"). It reports the rule the orchestrator opened as a config-only PR for
 the human to accept (merge) or reject (close). A proposal is **not** a drift fix
@@ -144,7 +144,7 @@ Per proposal, in order:
    stable citation anchor).
 2. **The rule** — the one-line `rule` that becomes the `>` blockquote.
 3. **The exemplar** — the `exemplar` `path:line` the entry cites.
-4. **The diverging sites** — shown **only when `disagree: yes`**: the `diverging`
+4. **The diverging sites** — shown only when `disagree: yes`: the `diverging`
    `file:line` list (the sites differing from the recommended winner, surfaced,
    not auto-changed). Omitted entirely when `disagree: no`.
 5. **The config-PR link** — a link to the config-only PR the orchestrator opened
@@ -199,7 +199,7 @@ The same write-up content lands in four places, but they are **not** equal
 
 | Place | Tier | How it's written |
 | --- | --- | --- |
-| **Inline summary** | **PRIMARY** — the un-buried headline a human reads | returned inline by the `review` skill; always produced |
+| **Inline summary** | PRIMARY — the un-buried headline a human reads | returned inline by the `review` skill; always produced |
 | Memory | supplemental — audit trail | the [memory-mirror helper](#the-memory-mirror-detect-or-fallback) |
 | The relevant issue comment | supplemental — audit trail | `gh issue comment <n> --body "<write-up>"` |
 | The related PR comment | supplemental — audit trail | `gh pr comment <pr> --body "<write-up>"` |
@@ -265,7 +265,7 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 A supplemental mirror whose target is unavailable is **skipped, noted, and never
 allowed to suppress the primary inline summary** (`BRIEF.md` l.89, l.96; the
 suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md` §"Keys" (the `Absent →` rows),
-`milestone-feeder/skills/plan/SKILL.md` §"Step 0: Read config + project docs (best-effort), once-per-run OUTER boundary").
+`milestone-feeder/skills/plan/SKILL.md (Step 0: Read config + project docs (best-effort), once-per-run)`).
 
 | Unavailable target | Behavior |
 | --- | --- |
@@ -363,7 +363,7 @@ mirrors accrue quietly as the audit trail.
 
 - The write-up is the **primary deliverable** — not the verdict (`BRIEF.md` l.23,
   l.115).
-- It **renders** from the engine's `FINDINGS` **and** `PROPOSALS` blocks via the
+- It **renders** from the engine's `FINDINGS` and `PROPOSALS` blocks via the
   analyze-once slices — it never re-greps, re-reads a doc, or re-derives a
   finding or a proposal.
 - **Dropped-grounding count**: when the Step 2.5 verify pass's tally

@@ -31,7 +31,7 @@ The router branches on **that one field** and nothing else.
 
 No other input influences where a fix lands:
 
-| Tempting input | Why it is **NOT** a routing signal |
+| Tempting input | Why it is **not** a routing signal |
 | --- | --- |
 | **Run length / time elapsed** | a driver-side *context/resource* concern, owned by the driver (compaction + subagent isolation), never a routing input — see [Run length is not a routing signal](#run-length-is-not-a-routing-signal) |
 | **Finding count** | each finding routes on *its own* `severity`; ten trivial findings are ten inline fixes, not one escalation |
@@ -65,7 +65,7 @@ and `large` route identically in either mode.
 
 ### `drift-trivial` → inline fix (embedded), or a small issue (standalone)
 
-- **Embedded mode (driver present).** A trivial finding is fixed **inline**: the
+- **Embedded mode (driver present).** A trivial finding is fixed inline: the
   orchestrator re-dispatches the implementer to fix it before the PR merges,
   mirroring `/code-review`'s in-scope loop — the reviewer stays read-only; the
   orchestrator performs the heal (convention:
@@ -115,7 +115,7 @@ the same way for every caller:
   determined** (an ambiguous or broken lookup degrades to this same branch
   rather than erroring or crashing, per the fail-soft / absence-means-skip
   philosophy — `.project/design-philosophy.md#Error & failure philosophy`) →
-  open the new issue **without** a milestone — a **backlog issue** carrying the
+  open the new issue **without** a milestone — a backlog issue carrying the
   finding + its `grounding`. Never invent or assume a "current" milestone.
 
 This is the **single copy** of the reconciliation logic — `review` Step 5 and
@@ -138,7 +138,7 @@ but not auto-run the driver in standalone v1) is the
 
 The engine also returns a `PROPOSALS` block, parallel to `FINDINGS`
 (`agents/coherence-reviewer.md` §"Convention proposals"). A **proposal** is
-**not** a drift fix — it carries no `severity` — so this router does **not**
+not a drift fix — it carries no `severity` — so this router does **not**
 route it. The drift-size router above (`drift-trivial` / `drift-small` /
 `drift-medium` / `drift-large`) routes **findings** only.
 
@@ -172,7 +172,7 @@ large — the active issue/PR still merges (`BRIEF.md` l.42-44, l.50):
   l.109): it fixes what it reasonably can and reports the rest, and the merge is
   out of its hands by construction.
 
-The never-gate property holds across **every** drift size and **every** mode —
+The never-gate property holds across every drift size and every mode —
 there is no `severity` value, and no run mode, under which routing blocks the
 merge. The table above has no "blocks merge" column because no row would ever
 set it.
@@ -212,7 +212,7 @@ handoff feeds, not a call the router makes.
 Termination relies on the **geometry of drift, not a cap**. Each pass the drift
 is smaller — a large structural divergence, once routed to a follow-up
 milestone and built, leaves at most small/medium residue; the next pass routes
-that residue **in-milestone**, where it is **not re-reviewed**. So within a round
+that residue in-milestone, where it is **not re-reviewed**. So within a round
 or two, findings land in the small/medium (in-milestone, not-re-reviewed) bucket
 and stop triggering re-review. The geometry ends it — no hard cap, no counter
 needed (`BRIEF.md` l.61, l.110).
@@ -246,7 +246,7 @@ drift size alone, so a long run never distorts where a fix lands.*
 When the review engine returns `FINDINGS: none` (the clean-fit sentinel —
 `agents/coherence-reviewer.md` §"Structured return block"), there is **nothing to route**:
 
-- The router opens **no issue**, hands **nothing** to the feeder, and
+- The router opens **no issue**, hands nothing to the feeder, and
   re-dispatches **no** implementer.
 - It does **not block the merge** — consistent with the never-gate invariant
   above; a clean fit is the success case, not a stop.
@@ -263,16 +263,16 @@ identically to a genuine clean fit — both have no findings, so both route
 nothing. `SOURCES` only tells the caller how much grounding was available; it is
 not a routing input.
 
-## The deferred boundary — `feeder → driver` auto-handoff (NOT built here)
+## The deferred boundary — `feeder → driver` auto-handoff (not built here)
 
-The router documents one boundary it does **not** cross. The **unattended**
+The router documents one boundary it does **not** cross. The unattended
 `feeder → driver` handoff this design targets — the driver auto-running a
 feeder-created follow-up milestone **after the active milestone finishes**,
-with **no human in between** — **still does not exist** (`BRIEF.md` l.83,
+with no human in between — **still does not exist** (`BRIEF.md` l.83,
 l.109):
 
 - In **standalone v1** (this repo's `review` skill), a `drift-large` route can
-  **create the follow-up milestone via the feeder** and **stops there**. As of
+  create the follow-up milestone via the feeder and **stops there**. As of
   `milestone-feeder` v0.5.0
   ([kenmulford/milestone-feeder#148](https://github.com/kenmulford/milestone-feeder/issues/148)),
   the feeder's `create` step **offers** to hand a clean run straight to the
@@ -351,13 +351,13 @@ keep judgment in the orchestrator.
   for every drift size and every mode (`BRIEF.md` l.42-44, l.50).
 - **Recursion / termination — milestone granularity, no counter.**
   Same-milestone fixes or backlog issues (small/medium, standalone-degraded
-  trivial) are **not** re-reviewed; a follow-up milestone **is** re-reviewed
+  trivial) are not re-reviewed; a follow-up milestone is re-reviewed
   only **by construction** (it re-enters `feeder → driver`, which includes
   coherence). The loop self-terminates because drift shrinks each pass until
   findings stay in-milestone (`BRIEF.md` l.54-61, l.110).
 - **Empty state.** `FINDINGS: none` → route nothing, open nothing, hand nothing
   to the feeder, block no merge.
-- **Deferred boundary, documented not built.** The **unattended** `feeder →
+- **Deferred boundary, documented not built.** The unattended `feeder →
   driver` auto-handoff (no human between milestones) still does not exist;
   standalone v1 creates the follow-up milestone via the feeder but cannot
   auto-run the driver itself. `milestone-feeder` has a narrower,

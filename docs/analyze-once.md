@@ -37,20 +37,20 @@ this point (`BRIEF.md` l.35). The fifth — recall — is the **`review` path on
 
 | Part | Source | Resolved by |
 | --- | --- | --- |
-| **The built diff** — or, for a sweep, the **sweep seed** (no diff) | per-change: the branch / PR under review, against `integrationBranch`. For a sweep there is **no diff** — the mandatory first context part is the sweep seed: a broad scan of all `sourceGlobs` (default), or one named `<pattern>` | the orchestrator |
+| **The built diff** — or, for a sweep, the sweep seed (no diff) | per-change: the branch / PR under review, against `integrationBranch`. For a sweep there is no diff — the mandatory first context part is the sweep seed: a broad scan of all `sourceGlobs` (default), or one named `<pattern>` | the orchestrator |
 | **The resolved `.project/` sections** | the cited `conventions.md` / `design-system.md` / `library-manifest.md` / `design-philosophy.md` sections, verbatim | `resolve-config.{sh,ps1} docs …` — read once |
 | **The `domainSkills` pointers** | the stack's best-practice sources from the driver profile | `resolve-config.{sh,ps1} keys …` — read once |
 | **The bounded grep results** — diff-keyed (per-change) / seed-or-broad-keyed on demand (sweep) | greps within `sourceGlobs` for the specific symbols the diff introduces — never a whole-repo scan (on the per-change path; for the opt-in sweep it is a seed/broad-keyed scan over `sourceGlobs` on demand — still bounded, still hard-grounded) | the orchestrator (diff-keyed per-change; seed/broad-keyed on demand for the sweep) |
-| **The recalled prior write-ups (advisory)** — **`review` path only** | the prior coherence write-up bodies matched (diff-keyed) to the diff's touched paths, handed to the engine as advisory context (verbatim `SECTION-BEGIN … SECTION-END`-style payloads), never re-read after this point — **gather mechanics in [recall.md](recall.md)** (the single source) | the orchestrator (`review` skill), via `scripts/memory-mirror.{sh,ps1} --recall` — read once (`docs/recall.md` §"Step 2 — gather the recall read-back (once)") |
+| **The recalled prior write-ups (advisory)** — `review` path only | the prior coherence write-up bodies matched (diff-keyed) to the diff's touched paths, handed to the engine as advisory context (verbatim `SECTION-BEGIN … SECTION-END`-style payloads), never re-read after this point — gather mechanics in [recall.md](recall.md) (the single source) | the orchestrator (`review` skill), via `scripts/memory-mirror.{sh,ps1} --recall` — read once (`docs/recall.md` §"Step 2 — gather the recall read-back (once)") |
 
 This is the **same** review context the review engine (`agents/coherence-reviewer.md`) documents under "What you
 receive" — the orchestrator builds it and hands it to the engine; the engine does
 not re-read whole docs or re-resolve the shared keys.
 
-The **recall** part applies to the **per-change `review` path only** — sweep
-recall is **not** built (a sweep receives a sweep context, **no diff**, so the
+The recall part applies to the per-change `review` path only — sweep
+recall is **not** built (a sweep receives a sweep context, no diff, so the
 diff-keyed match is undefined there; `docs/recall.md` §"The deferred boundary —
-sweep recall (NOT built here)"). On the sweep path the context stays at its four
+sweep recall (not built here)"). On the sweep path the context stays at its four
 parts (the sweep seed in place of the diff).
 
 ## Step 2 — Produce the consolidated analysis (once)
@@ -149,7 +149,7 @@ finding — never a retry loop, never a fresh whole-repo grep, never a
 | `grounding` kind | The one-shot tier-2 re-check |
 | --- | --- |
 | `<path>:<line>` | read that exact file directly and confirm the line is in-range — one bounded read, not a re-grep |
-| `<path> (<anchor>)` | resolve that one anchor directly, via the driver's shipped citation primitive called through this repo's own wrapper (`scripts/resolve-config.<sh\|ps1> cite <path> <anchor>`) — one bounded file scan, not a re-grep. **Exit 0** (one or more matches): the grounding resolves — keep the finding, and take the `PRIMARY` line as its resolved location. **Any non-zero exit is a tier-2 failure**, so the finding falls into the existing tally below, unchanged: `1` is the anchor not found or the file missing/unreadable, `2` is bad usage — which an anchor authored empty (`path ()`) produces, since an empty string matches every line — and any code the primitive grows later lands in the same bucket rather than in undefined behavior. The primitive being **unlocatable** exits 1 as well, so a degraded install is treated *exactly* like an anchor that did not resolve. Every one of those paths is dropped, tallied, and noted, and none is a crash or a merge block (`.project/design-philosophy.md#Error & failure philosophy`) |
+| `<path> (<anchor>)` | resolve that one anchor directly, via the driver's shipped citation primitive called through this repo's own wrapper (`scripts/resolve-config.<sh\|ps1> cite <path> <anchor>`) — one bounded file scan, not a re-grep. Exit 0 (one or more matches): the grounding resolves — keep the finding, and take the `PRIMARY` line as its resolved location. **Any non-zero exit is a tier-2 failure**, so the finding falls into the existing tally below, unchanged: `1` is the anchor not found or the file missing/unreadable, `2` is bad usage — which an anchor authored empty (`path ()`) produces, since an empty string matches every line — and any code the primitive grows later lands in the same bucket rather than in undefined behavior. The primitive being unlocatable exits 1 as well, so a degraded install is treated *exactly* like an anchor that did not resolve. Every one of those paths is dropped, tallied, and noted, and none is a crash or a merge block (`.project/design-philosophy.md#Error & failure philosophy`) |
 | `.project/<doc>#<section>` | re-resolve that one section directly, via the same primitive Step 1 already calls (`scripts/resolve-config.<sh\|ps1> docs <REPO_ROOT> -- <doc>#<heading>`) — one section read, not the whole doc |
 | `domainSkills:<source>` | re-check the source string against the resolved `domainSkills` list — the same list tier 1 already checked. No live `domainSkills`-resolution path exists anywhere in the engine (`agents/coherence-reviewer.md` §"What you receive") — so this re-check is definitionally a no-op. It still runs, for contract symmetry across the four grounding kinds; no fixture where it does anything other than reconfirm tier 1 is constructible, and none is expected |
 
@@ -168,7 +168,7 @@ Three things the anchor row does **not** change:
 - **Extra `MATCH` rows are informational.** An anchor matching several places
   still passes on its first match; the further rows only report that the anchor
   was less unique than its author intended, and never change the pass/fail
-  outcome (`milestone-driver/scripts/resolve-citation.sh (PRIMARY is a LABEL, NOT A FILTER)`).
+  outcome (`milestone-driver/scripts/resolve-citation.sh (PRIMARY is a LABEL)`).
 - **The line forms are untouched.** `<path>:<line>` and `<path>:<start>-<end>`
   keep today's in-range read and stay permanently valid to write — a live form,
   not a legacy tolerance and not a deprecation path
@@ -185,7 +185,7 @@ no drop-count contribution from that finding.
 
 ### Drop — only when both tiers fail
 
-A finding whose `grounding` fails **both** tiers is **dropped**: never
+A finding whose `grounding` fails both tiers is **dropped**: never
 distributed as a slice, never rendered in the write-up, never routed. This is a
 mechanical drop, not a merge-blocking verdict — coherence heals, it does not
 gate (`.project/design-philosophy.md#Error & failure philosophy`). The pass
@@ -206,7 +206,7 @@ return block" — the `FINDINGS: none` clean-fit bullet; see also
 
 `review` and a **narrowed** `sweep` each dispatch the engine exactly once, so
 this pass also runs exactly once, right after that single dispatch. A
-**broad** `sweep` dispatches once **per top-level sub-path** and persists a
+broad `sweep` dispatches once **per top-level sub-path** and persists a
 checkpoint after each sub-path completes (`skills/sweep/SKILL.md` §"Broad
 sweep — per-sub-path dispatch, checkpointed"). That checkpoint persists only
 `accumulated.findings` / `accumulated.proposals` — never the per-sub-path grep
@@ -288,8 +288,8 @@ Before a slice is dispatched, it must satisfy the route's shape:
 
 | Route | A complete slice carries | Reject and treat as an orchestration error when |
 | --- | --- | --- |
-| inline-fix | the one finding **+** its single grounding citation **+** the exact file scope | the grounding ref is missing, or the file scope is empty/unknown — anything that would force the implementer to re-grep or re-derive |
-| large-drift | the adjustments brief **+** the grounding refs **+** the drift scope | the brief is just a pointer back to "the analysis", or it carries no citation, or it inlines the raw repo/diff instead of a brief |
+| inline-fix | the one finding + its single grounding citation + the exact file scope | the grounding ref is missing, or the file scope is empty/unknown — anything that would force the implementer to re-grep or re-derive |
+| large-drift | the adjustments brief + the grounding refs + the drift scope | the brief is just a pointer back to "the analysis", or it carries no citation, or it inlines the raw repo/diff instead of a brief |
 
 The check is mechanical against the slice shape: every required element is present
 and concrete, or the slice does not go out. The orchestrator does **not** quietly
@@ -406,18 +406,18 @@ slice to the route's fixed shape, validated against the
   scan with **no diff** (the opt-in sweep), plus the resolved `.project/`
   sections + `domainSkills` pointers + the bounded greps (diff-keyed per-change;
   seed/broad-keyed over `sourceGlobs` on demand for the sweep), plus — on the
-  **`review` path only** — the **recalled prior write-ups** as an advisory fifth
+  **`review` path only** — the recalled prior write-ups as an advisory fifth
   part (diff-keyed, read once via `scripts/memory-mirror.{sh,ps1} --recall`,
   handed to the engine as advisory context, never re-read; mechanics in
   [recall.md](recall.md)) — is assembled **once** per review call.
-- The consolidated **analysis** (the review engine's `FINDINGS` **and** `PROPOSALS`
+- The consolidated **analysis** (the review engine's `FINDINGS` and `PROPOSALS`
   blocks) is produced **once** per review call — regardless of N findings or M
   dispatches.
 - Each downstream dispatch gets a **minimal, self-contained slice** derived from
   that single analysis: inline-fix = `{ finding + citation + file scope }`;
   large-drift = a tight adjustments brief. Never the whole analysis, the raw
   `.project/` sections, or a raw repo dump.
-- **Convention proposals are a separate lane** — the `PROPOSALS` block is **not**
+- **Convention proposals are a separate lane** — the `PROPOSALS` block is not
   drift-routed; each proposal goes to a config-only PR (`skills/review/SKILL.md`
   Step 3) targeting `integrationBranch`, human-gated (`docs/heal-routing.md`
   §"Convention proposals are a separate lane").
@@ -431,7 +431,7 @@ slice to the route's fixed shape, validated against the
   re-grep, or re-derive) is an **orchestration error**, not shipped.
 - **`FINDINGS: none`** → nothing to distribute → no slices, no dispatch → a valid
   clean terminal.
-- The analysis is produced by the **read-only engine**; the **orchestrator** acts
+- The analysis is produced by the **read-only engine**; the orchestrator acts
   on the slices. This doc defines the distribution mechanism; it does not act.
 
 Same DNA as the driver's resolve-once block, and as this repo's own

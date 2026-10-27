@@ -41,8 +41,8 @@ the `.project/` sections (`BRIEF.md` §"Analyze once, then distribute" l.33-40).
 
 | Rung | Condition | Result |
 | --- | --- | --- |
-| 1 | `agentIssueTemplate` is set in `.milestone-config/driver.json` **and** the named file is readable | use that template — **Mode A** |
-| 2 | exactly one file in `.github/ISSUE_TEMPLATE/` | use it — **Mode A** if it is a suite-authored stock file, **Mode B** if it is consumer-owned, **Mode C** if it is `.md` |
+| 1 | `agentIssueTemplate` is set in `.milestone-config/driver.json` **and** the named file is readable | use that template — Mode A |
+| 2 | exactly one file in `.github/ISSUE_TEMPLATE/` | use it — Mode A if it is a suite-authored stock file, Mode B if it is consumer-owned, Mode C if it is `.md` |
 | 3 | zero templates, **or** two-plus with no `agentIssueTemplate` key | the built-in shape |
 | 4 | — | absence **never** blocks issue creation |
 
@@ -70,7 +70,7 @@ field's meaning.
 | Mode | Reached via | Shape | Emission |
 | --- | --- | --- | --- |
 | **A** | rung 1, or rung 2 on a suite-authored stock `.yml` | known | translate every non-`markdown` field to `## <label>`, in `body:` order |
-| **B** | rung 2 on a consumer-owned `.yml` | unknown | the **first** `textarea`'s `attributes.label` becomes one `## <label>`; the whole built-in body goes under it; every other field is omitted |
+| **B** | rung 2 on a consumer-owned `.yml` | unknown | the first `textarea`'s `attributes.label` becomes one `## <label>`; the whole built-in body goes under it; every other field is omitted |
 | **C** | rung 2 on a `.md` template | n/a | use the `.md` body as the skeleton directly |
 
 ### Mode A — stock or keyed (shape known)
@@ -223,7 +223,7 @@ skip; coherence heals, it never gates*).
 | two or more templates and no `agentIssueTemplate` key | built-in shape |
 | a Mode B template with **zero** `textarea` fields | built-in shape |
 | a Mode A **optional** field that cannot be filled | that section omitted |
-| a Mode A **required** field that cannot be filled | the truthful constant for Non-goals; **any other** such field → built-in shape for that finding |
+| a Mode A **required** field that cannot be filled | the truthful constant for Non-goals; any other such field → built-in shape for that finding |
 
 A "noted" row is surfaced the same way every other best-effort step in the run is
 — skipped-and-noted in the write-up, never raised (`docs/write-up.md`
