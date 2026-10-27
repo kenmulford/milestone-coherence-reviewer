@@ -7,15 +7,15 @@ one-click way to redo it differently if you disagree* (`BRIEF.md`
 §"Communication is the actual product" l.63-74; §"Recorded decisions" l.115).
 
 This doc is the **write-up contract** — the shape of that note, where it lands,
-and how it degrades. It is implemented by the standalone `review` skill (#7) and
-rendered from the [review engine](../agents/coherence-reviewer.md)'s (#3)
+and how it degrades. It is implemented by the standalone `review` skill and
+rendered from the [review engine](../agents/coherence-reviewer.md)'s
 `FINDINGS` **and** `PROPOSALS` blocks, distributed through the
-[analyze-once](analyze-once.md) (#4) slices. The write-up **renders** from that
+[analyze-once](analyze-once.md) slices. The write-up **renders** from that
 single consolidated analysis — it never re-greps the repo, re-reads a doc, or
 re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 
 > Scope note. This doc **specifies** the write-up and its mirrors. It does not
-> itself run `gh` or post comments — the `review` skill (#7) enacts the issue and
+> itself run `gh` or post comments — the `review` skill enacts the issue and
 > PR mirrors via `gh ... comment`; this layer ships only the
 > [memory-mirror helper](#the-memory-mirror-detect-or-fallback) the skill calls.
 
@@ -24,7 +24,7 @@ re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 The write-up is built **entirely** from the engine's `FINDINGS` **and**
 `PROPOSALS` blocks, handed across as the analyze-once analysis, refined by the
 Step 2.5 verify pass (`docs/analyze-once.md` §"Verify grounding, drop what
-fails"; issue #38) before either block reaches the renderer. Every per-finding
+fails") before either block reaches the renderer. Every per-finding
 and per-proposal **content** field it shows — the fields in the table below —
 is a field one of those blocks already carries; the renderer transforms, it
 does not discover. Two elements describing the reviewed change are **not**
@@ -168,7 +168,7 @@ dropped for lack of grounding never appears here.
 
 Where the sections above render **from** the engine's blocks, this one renders
 from the orchestrator's own **Step 2.5 verify pass** (`docs/analyze-once.md`
-§"Verify grounding, drop what fails"; issue #38) — the mechanical check, run in
+§"Verify grounding, drop what fails") — the mechanical check, run in
 both `skills/review/SKILL.md` and `skills/sweep/SKILL.md` immediately after
 their engine dispatch, that drops any finding whose `grounding` fails both the
 cache-only tier-1 check and the one bounded tier-2 live re-check.
@@ -283,8 +283,8 @@ does not gate).
 
 The memory mirror is **supplemental and best-effort**, written by the helper this
 layer ships — `scripts/memory-mirror.{sh,ps1}`. Its target is resolved by the
-**detect-or-fallback** design (RESOLVED, user decision 2026-06-23; issue #5
-Design):
+**detect-or-fallback** design (RESOLVED, user decision
+2026-06-23):
 
 ### Conservative detection (never guess-and-write)
 

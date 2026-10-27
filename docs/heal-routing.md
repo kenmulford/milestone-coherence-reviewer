@@ -1,7 +1,7 @@
 # Heal routing — where each finding's fix lands (by drift size)
 
-The [review engine](../agents/coherence-reviewer.md) (#3) returns grounded
-findings; the [analyze-once](analyze-once.md) (#4) layer shapes each into a
+The [review engine](../agents/coherence-reviewer.md) returns grounded
+findings; the [analyze-once](analyze-once.md) layer shapes each into a
 minimal, self-contained slice. This doc is the third piece: it decides **where
 each fix lands** — and it makes that decision on **one key only, the drift
 size** — without ever blocking the active issue/PR from merging.
@@ -12,15 +12,15 @@ merges regardless of what the router decides (`BRIEF.md` §"It heals, it doesn't
 gate" l.42-52).
 
 This doc specifies the **routing contract only**. It is the spec the standalone
-`review` skill (#7) implements; #7 (or the driver in the embedded path)
+`review` skill implements; the skill (or the driver in the embedded path)
 *performs* the heal. The router itself decides the destination — it does not act
 (see [Read-only engine, orchestrator acts](analyze-once.md#read-only-engine-orchestrator-acts)).
 
-> Boundary with #4. The [analyze-once](analyze-once.md) doc defines the **slice
+> Boundary with analyze-once. The [analyze-once](analyze-once.md) doc defines the **slice
 > shapes** — the inline-fix slice and the large-drift slice — and explicitly
 > hands the routing *decision* to this doc (`analyze-once.md` "The routing
 > decision (which finding takes which route, keyed off `severity`) belongs to
-> #6"). This doc references those slice shapes; it does **not** redefine them.
+> heal routing"). This doc references those slice shapes; it does **not** redefine them.
 
 ## The single routing key — drift size, nothing else
 
@@ -50,7 +50,7 @@ four routes do not overlap. The table is **total** (it covers
 from `agents/coherence-reviewer.md` §"Drift-size hint (for the orchestrator's routing — not a gate)") and **mutually exclusive** (each
 `severity` maps to one and only one destination):
 
-| `severity` | Route | Destination | Slice it receives (#4) |
+| `severity` | Route | Destination | Slice it receives (analyze-once) |
 | --- | --- | --- | --- |
 | `drift-trivial` | **inline fix** *(embedded)* — re-dispatch the implementer to fix it before the PR merges | the implementer, mid-run | the [inline-fix slice](analyze-once.md#the-inline-fix-slice-to-the-implementer-re-dispatch): `{ finding + citation + file scope }` |
 | `drift-trivial` | **degrades to a small issue** *(standalone)* — no build loop to re-dispatch into | a new issue — milestone-attached or backlog (see [reconciliation](#milestone-attachment-reconciliation-not-a-hard-coded-assumption) below) | — (issue carries the finding + its grounding) |
@@ -125,7 +125,7 @@ This is the **single copy** of the reconciliation logic — `review` Step 5 and
 
 A large finding is handed to **`milestone-feeder` as a brief** of the
 adjustments — the [large-drift slice](analyze-once.md#the-large-drift-slice-handoff-to-milestone-feeder)
-from #4 (a tight adjustments brief with citations, *not* a raw repo dump). The
+from analyze-once (a tight adjustments brief with citations, *not* a raw repo dump). The
 feeder plans + creates the follow-up milestone with its own triage gate,
 authoring well-formed issues exactly as it does for any other brief (convention:
 `milestone-feeder/docs/create-deploy-sequence.md` §"b. Create-or-adopt the milestone (by EXACT title)", §"c. Create each surviving issue; build the slug→`#n` map"; `BRIEF.md` §"It heals, it doesn't gate", §"Analyze once, then distribute (token efficiency)"). The router **authors no milestone by
@@ -342,7 +342,7 @@ keep judgment in the orchestrator.
   `PROPOSALS` block does not route through this router; a proposal goes to a
   config-only PR (`skills/review/SKILL.md` Step 3) targeting
   `integrationBranch`, human-gated — never a drift bucket, and never a gate.
-- **Each route receives its #4 slice, not the analysis.** inline = the
+- **Each route receives its analyze-once slice, not the analysis.** inline = the
   `{ finding + citation + file scope }` slice; large = the adjustments brief. The
   slice **shapes** are defined in [analyze-once.md](analyze-once.md); this doc
   references them.
@@ -360,7 +360,7 @@ keep judgment in the orchestrator.
 - **Deferred boundary, documented not built.** The **unattended** `feeder →
   driver` auto-handoff (no human between milestones) still does not exist;
   standalone v1 creates the follow-up milestone via the feeder but cannot
-  auto-run the driver itself. `milestone-feeder`#148 shipped a narrower,
+  auto-run the driver itself. `milestone-feeder` has a narrower,
   human-gated create-time offer (`autoHandoff`, default `prompt`) — not this
   cycle (`BRIEF.md` l.83, l.109).
 

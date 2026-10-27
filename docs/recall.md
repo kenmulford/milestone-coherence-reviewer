@@ -35,7 +35,7 @@ across `scripts/resolve-config.{sh,ps1}` and the suite's mirror row):
 | Step | How |
 |---|---|
 | invoke | `scripts/memory-mirror.<sh\|ps1> --recall --repo-root <REPO_ROOT> -- <the diff's touched paths>` — the touched paths from `git diff <integrationBranch>...<head> --name-only` |
-| parse ONCE | read #69's documented TAB record stream a **single** time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
+| parse ONCE | read recall's documented TAB record stream a **single** time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
 | hand off | for each matched entry, wrap its **verbatim body lines** as a `SECTION-BEGIN … SECTION-END`-style payload — the **same** verbatim-payload shape the resolved `.project/` sections use (`skills/review/SKILL.md` Step 1 item 2) — as the engine's fifth advisory context part. **Never** hand the engine the raw TAB stream |
 | empty state | `entries=0`, or the `NONE` sentinel, with **exit 0** → the recall part is empty/absent; the engine analyzes from scratch (Step 4 renders the "no related prior write-ups found" note). A store that is **absent / empty / unreadable is this exit-0 empty-state — NOT a failure** (`scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED)`; the `.ps1` twin) |
 | failure state | ONLY a genuine invocation failure — a **nonzero exit** from a missing script/binary, a host-detection failure, or the **exit-2** bad-usage case — is a recall failure: note recall is unavailable and proceed exactly as if recall did not exist (analyze from scratch), fail-soft, never crash, never block the merge (`.project/design-philosophy.md#Error & failure philosophy`). Model the note on the Step 4 mirror table's `MIRROR-FAILED …` skip-and-note, scoped per this row |
@@ -113,7 +113,7 @@ absence-means-skip; "Coherence heals; it never gates").
 | **Empty store** — target resolves but holds no entries | render "no prior write-ups found"; continue |
 | **Unreadable or corrupt store** — target resolves but does not parse | render "no prior write-ups found"; continue |
 
-All three rows are #69's `--recall` **exit-0 empty-state** — the `NONE` sentinel
+All three rows are the `--recall` **exit-0 empty-state** — the `NONE` sentinel
 plus `SUMMARY entries=0` on stdout (`scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED)`) — a
 store that is absent/empty/unreadable is **not** a failure. A **genuine
 invocation failure** (a *nonzero* exit — a missing script/binary, a
@@ -155,7 +155,7 @@ match-key decision. Documented, not implemented.
   per-change `review` path; sweep-mode recall is **not** built (a sweep receives
   no diff, so the diff-keyed match is undefined).
 - **Gathered once (Step 2).** Read back via `scripts/memory-mirror.{sh,ps1}
-  --recall` after the diff is known and before the single engine dispatch; #69's
+  --recall` after the diff is known and before the single engine dispatch; recall's
   TAB record stream is parsed **once**, `entries=<N>` read from SUMMARY, matched
   bodies handed to the engine as verbatim `SECTION-BEGIN … SECTION-END`-style
   advisory payloads — never the raw stream, never re-read.
@@ -164,7 +164,7 @@ match-key decision. Documented, not implemented.
   surfaces any prior entry whose recorded `<path>:<line>` grounding intersects
   the diff's touched paths — flat cost, keyed to what the change touches.
 - **Empty / fail-soft — never silence (Step 4).** An absent/empty/unreadable
-  store is #69's exit-0 empty-state (`NONE` + `SUMMARY entries=0`,
+  store is recall's exit-0 empty-state (`NONE` + `SUMMARY entries=0`,
   `scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED)`), **not** a failure; only a genuine nonzero
   invocation failure is the separate fail-soft case. Both render the explicit
   "no related prior write-ups found" note.
