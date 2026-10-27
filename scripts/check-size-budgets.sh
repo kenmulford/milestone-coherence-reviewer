@@ -104,6 +104,9 @@ CEILINGS=(
   # numbers from the sweep text took it to 3655 measured as glibc GNU `wc -w`
   # under LC_ALL=C (the awk measure counting tokens with a printable ASCII byte),
   # 3784 by local macOS `wc -w`. 3655*1.05 ~= 3838 -> 3900.
+  # Re-derived in issue #125: stating the narrowed-sweep dispatch directly took
+  # it to 3636 (same awk measure), 3762 by local macOS `wc -w`. 3636*1.05 ~= 3818
+  # -> 3900, so the ceiling holds at 3900.
   3900
 )
 

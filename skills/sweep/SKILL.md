@@ -43,9 +43,9 @@ Build the sweep context, then dispatch the engine **in sweep-mode** (`docs/analy
 | **narrowed** (`<pattern>` given) | **one** engine dispatch against the whole named pattern | not read, not written |
 | **broad** (no `$ARGUMENTS`) | **one dispatch per top-level sub-path** not yet marked done, in turn | read at the start of the run; written after every sub-path completes |
 
-#### Narrowed sweep — one dispatch, unchanged
+#### Narrowed sweep — one dispatch
 
-Assemble the four context parts once, scoped to the `<pattern>`, and dispatch the engine once — byte-for-byte the prior behavior (Step 2.5, below, adds a new pass immediately after this dispatch; the dispatch itself — context assembly + the single engine call — is what stays unchanged):
+Assemble the four context parts once, scoped to the `<pattern>`, and dispatch the engine once; Step 2.5, below, verifies the returned findings immediately after this dispatch:
 
 | Part | Source |
 |---|---|
