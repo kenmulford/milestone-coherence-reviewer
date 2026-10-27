@@ -140,7 +140,7 @@ The engine also returns a `PROPOSALS` block, parallel to `FINDINGS`
 (`agents/coherence-reviewer.md` §"Convention proposals"). A **proposal** is
 **not** a drift fix — it carries no `severity` — so this router does **not**
 route it. The drift-size router above (`drift-trivial` / `drift-small` /
-`drift-medium` / `drift-large`) is **unchanged**: it routes **findings** only.
+`drift-medium` / `drift-large`) routes **findings** only.
 
 - **Findings route on drift size** (the route table above).
 - **Proposals route to a config-only PR** — the `review` skill's Step 3

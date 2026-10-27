@@ -72,7 +72,7 @@ Each is **skipped and noted**, exactly like the write-up's mirror-degradation pa
 
 ## The sweep delta
 
-`skills/sweep/SKILL.md` §"Step 3" uses this machinery **unchanged** but for one field: in sweep-mode a proposal carries `source: sweep`, where the `review` path carries `source: per-change`. Everything above — suppress, dedupe, the create sequence, the fallback — is identical on both paths.
+`skills/sweep/SKILL.md` §"Step 3" uses this machinery, with one field set per path: in sweep-mode a proposal carries `source: sweep`, where the `review` path carries `source: per-change`. Everything above — suppress, dedupe, the create sequence, the fallback — is identical on both paths.
 
 ## Invariants
 

@@ -112,7 +112,7 @@ and before their Step 3/4/5 consume `FINDINGS`. It is specified once, here,
 rather than duplicated in each skill file — the same single-source-of-truth
 pattern `docs/heal-routing.md` already uses for the routing contract. This is
 new **orchestrator-side** logic only — `agents/coherence-reviewer.md` keeps
-emitting findings with its existing best-effort prompt-level care, unchanged
+emitting findings with its best-effort prompt-level care at emit time
 (`.project/design-philosophy.md#Layering & boundaries` — the read-only-engine
 ↔ orchestrator split).
 
@@ -156,7 +156,7 @@ finding — never a retry loop, never a fresh whole-repo grep, never a
 An anchor grounding has **no tier-1 entry** — the Step 1/Step 2 cache holds no
 anchor index to look one up in — so it always misses the cache-only check and
 resolves here, at the cost of the one bounded call every other tier-2 kind
-already pays. Tier 1 itself is unchanged.
+already pays. Tier 1 stays a cache-only check.
 
 Three things the anchor row does **not** change:
 
@@ -198,7 +198,7 @@ nothing when it is zero.
 
 `FINDINGS: none` (the engine's clean-fit sentinel) skips this pass entirely —
 nothing to verify, so no drop-count line is rendered, matching the existing
-clean-fit behavior unchanged (`agents/coherence-reviewer.md` §"Structured
+clean-fit behavior (`agents/coherence-reviewer.md` §"Structured
 return block" — the `FINDINGS: none` clean-fit bullet; see also
 [Zero-findings — a clean terminal](#zero-findings--a-clean-terminal)).
 

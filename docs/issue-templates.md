@@ -16,8 +16,8 @@ with [heal-routing](heal-routing.md) (the route table) and [recall](recall.md)
 (the read-back contract). Design record:
 [`docs/superpowers/specs/2026-07-20-template-shaped-spin-out-design.md`](superpowers/specs/2026-07-20-template-shaped-spin-out-design.md).
 
-> Scope note. This is the **`review` path only** — `skills/sweep/SKILL.md` is
-> unchanged. This doc shapes the **body**; it never touches *where* the issue
+> Scope note. This is the **`review` path only** — `skills/sweep/SKILL.md`
+> spin-outs do not use these templates. This doc shapes the **body**; it never touches *where* the issue
 > attaches (heal-routing's
 > [reconciliation](heal-routing.md#milestone-attachment-reconciliation-not-a-hard-coded-assumption)),
 > and it is **never a gate** — no template condition can stop an issue from
@@ -232,7 +232,7 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
 ## Out of scope
 
 - **The write-up format**, its four landing places, and the per-finding tightness
-  rule (`docs/write-up.md`) — unchanged.
+  rule (`docs/write-up.md`) — stay in that doc.
 - **The drop-if-ungroundable inversion** (`agents/coherence-reviewer.md` §"The hard-grounding rule (load-bearing — enforced at emit time)") —
   deliberate, stays.
 - **The `chore/propose-*` conventions-PR lane** (`skills/review/SKILL.md` §"Step 3") —
@@ -241,7 +241,7 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
 - **Heal routing itself** — which finding takes which route, and whether the new
   issue attaches to a milestone or the backlog, stay in
   [heal-routing.md](heal-routing.md).
-- **Sweep-mode spin-outs** — `skills/sweep/SKILL.md` is unchanged.
+- **Sweep-mode spin-outs** — `skills/sweep/SKILL.md` spin-outs do not use these templates.
 - **Enforcement.** Issue *forms* are browser-UI only; `gh issue create` with a
   body bypasses them entirely
   ([cli/cli#5865](https://github.com/cli/cli/issues/5865)). This is structure the

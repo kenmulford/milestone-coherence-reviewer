@@ -238,7 +238,7 @@ nothing changed"** — and is never silence or an empty output (`BRIEF.md` §"Wh
   fields (`agents/coherence-reviewer.md` §"Sweep-mode"). This is the render
   contract the sweep's empty-state reuses to surface "what was scanned"
   (`skills/sweep/SKILL.md` §"Empty state") — a parallel case; the per-change
-  clean-fit headline is unchanged.
+  clean-fit headline carries no scanned line.
 - Absence of findings is an **explicit statement**, never an absent output. The
   reviewer reports both halves — what fits and what doesn't.
 
