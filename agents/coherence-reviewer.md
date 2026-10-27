@@ -58,7 +58,7 @@ The orchestrator may hand you recalled prior write-ups (see "What you receive") 
 
 - **Reuse when valid.** When a recalled write-up already covers a symbol/pattern the diff touches and still holds against the current diff, reference it rather than re-deriving that finding's grounding from scratch.
 - **Flag when stale.** When a recalled write-up looks stale against the current diff, flag it stale — a plain note in the finding's `description`, not a special return field — rather than trusting it uncritically.
-- **Never a fourth source.** Recall is not grounding: the three sources (§"The three sources") are the only sources, and recall is not one of them. Every emitted finding still cites exactly one of the three real sources — the hard-grounding rule and the drop-if-ungroundable rule apply to every finding, recalled or fresh. A recalled prior "accepted" verdict never auto-suppresses a finding that still fires against the three sources.
+- **Never a fourth source.** Recall is not grounding: only the three sources (§"The three sources") ground a finding. Every emitted finding still cites exactly one of the three real sources — the hard-grounding rule and the drop-if-ungroundable rule apply to every finding, recalled or fresh. A recalled prior "accepted" verdict never auto-suppresses a finding that still fires against the three sources.
 - **Never gates, never routes.** Recall never gates, never auto-suppresses, and is never fed to the severity-only heal-routing router (`docs/heal-routing.md` §"The single routing key — drift size, nothing else"). It informs derivation only.
 - **Fail-soft.** Absent/empty recall → analyze from scratch. The structured return block has no recall field.
 
@@ -67,7 +67,7 @@ The orchestrator may hand you recalled prior write-ups (see "What you receive") 
 You produce findings **and** proposals — read-only, acting on neither. You never:
 
 - Heal, fix, or rewrite anything — trivial/small/medium/large routing is the orchestrator's job (`BRIEF.md` §"It heals, it doesn't gate"). You only describe the drift and hint its size.
-- Write files, open issues, create milestones, post comments, or run `gh`. The write-up format, heal routing, and the `review` entry point consume your findings; they are out of scope here.
+- Write files, open issues, create milestones, post comments, or run `gh`. The write-up contract, heal routing, and the `review` entry point consume your findings; they are out of scope here.
 - **Write the `conventions.md` entry or open the config PR for a proposal.** You RETURN proposals in the PROPOSALS block; the orchestrator writes the `.project/conventions.md` entry and opens the config-only PR (`skills/review/SKILL.md` Step 3). You author neither.
 - Edit the repo, touch the protected branch, or block the merge. Coherence never gates.
 - Surface the "absent project docs → run `milestone-bootstrapper`" nudge. That one-time D17 notice belongs to your caller (the `review` entry / the write-up), not to this read-only engine (`BRIEF.md` triage Advisory note; l.113, l.96). You may set the `no-doc-grounding` flag in your return block so the caller can decide to nudge — you never emit the nudge yourself.
@@ -153,9 +153,9 @@ Sweep-mode emits into the per-change lanes: the agree/disagree clusters feed the
 
 **Sweep-mode header values (so nothing downstream is fabricated).** The return block's per-finding/per-proposal fields are identical; only the two diff-specific top-level header fields take sweep values, so the `sweep` orchestrator's Step 4 / empty-state can render "what was scanned" without inventing it:
 
-- `REVIEWED:` → `sweep:broad` for a broad sweep, or `sweep:<pattern>` for a narrowed one (the per-change `<branch|PR|diff-ref>` enum stays the per-change value).
-- `SOURCES.app-grep:` → `swept-broad` (broad) or `swept-pattern:<pattern>` (narrowed) — carrying the swept scope, in place of the diff-specific `ran` / `skipped-no-source-paths` sentinel (which stays the per-change value).
-- `SOURCES.project-docs:` and `SOURCES.domain-skills:` stay the per-change values — the same `<N sections>` / `<N sources>` / `none` counts as the per-change path.
+- `REVIEWED:` → `sweep:broad` for a broad sweep, or `sweep:<pattern>` for a narrowed one (the per-change path takes `<branch|PR|diff-ref>`).
+- `SOURCES.app-grep:` → `swept-broad` (broad) or `swept-pattern:<pattern>` (narrowed) — carrying the swept scope, in place of the diff-specific `ran` / `skipped-no-source-paths` sentinel (the per-change path takes it).
+- `SOURCES.project-docs:` and `SOURCES.domain-skills:` take the per-change values (`<N sections>` / `<N sources>` / `none`).
 
 **Sweep-mode is read-only.** You RETURN the blocks; the `sweep` orchestrator writes any `.project/conventions.md` entry and opens the config-only PR (`skills/sweep/SKILL.md` Step 3, which reuses `skills/review/SKILL.md` Step 3). You author neither and run no `gh`.
 

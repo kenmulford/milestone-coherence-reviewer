@@ -14,7 +14,7 @@ efficiency)", l.33-40; §"Recorded decisions" l.114). Gather once, distribute
 slices.
 
 This doc specifies the **distribution mechanism only**. It is the contract the
-standalone `review` skill implements, and that the write-up format and
+standalone `review` skill implements, and that the write-up contract and
 the heal routing consume. It does not itself act — see
 [Read-only engine, orchestrator acts](#read-only-engine-orchestrator-acts).
 
@@ -112,7 +112,7 @@ and before their Step 3/4/5 consume `FINDINGS`. It is specified once, here,
 rather than duplicated in each skill file — the same single-source-of-truth
 pattern `docs/heal-routing.md` already uses for the routing contract. This is
 new **orchestrator-side** logic only — `agents/coherence-reviewer.md` keeps
-emitting findings with its best-effort prompt-level care at emit time
+emitting findings with its best-effort prompt-level care
 (`.project/design-philosophy.md#Layering & boundaries` — the read-only-engine
 ↔ orchestrator split).
 

@@ -100,13 +100,8 @@ CEILINGS=(
   # carried a ~250-word restatement of review's Step 3 while its own text called
   # that a reference "not a re-implementation"; relocating to docs/proposal-pr.md
   # took it 4312 -> 4112.
-  # Ratcheted DOWN again 4200 -> 3900 in issue #123: dropping the build-issue
-  # numbers from the sweep text took it to 3655 measured as glibc GNU `wc -w`
-  # under LC_ALL=C (the awk measure counting tokens with a printable ASCII byte),
-  # 3784 by local macOS `wc -w`. 3655*1.05 ~= 3838 -> 3900.
-  # Re-derived in issue #125: stating the narrowed-sweep dispatch directly took
-  # it to 3636 (same awk measure), 3762 by local macOS `wc -w`. 3636*1.05 ~= 3818
-  # -> 3900, so the ceiling holds at 3900.
+  # Ratcheted 4200 -> 3900: 3639 by glibc GNU `wc -w` under LC_ALL=C (see the
+  # NB block above), 3764 by local macOS `wc -w`. 3639*1.05 ~= 3821 -> 3900.
   3900
 )
 

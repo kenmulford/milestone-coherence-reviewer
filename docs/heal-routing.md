@@ -16,7 +16,7 @@ This doc specifies the **routing contract only**. It is the spec the standalone
 *performs* the heal. The router itself decides the destination — it does not act
 (see [Read-only engine, orchestrator acts](analyze-once.md#read-only-engine-orchestrator-acts)).
 
-> Boundary with analyze-once. The [analyze-once](analyze-once.md) doc defines the **slice
+> Boundary with [analyze-once](analyze-once.md). That doc defines the **slice
 > shapes** — the inline-fix slice and the large-drift slice — and explicitly
 > hands the routing *decision* to this doc (`analyze-once.md` "The routing
 > decision (which finding takes which route, keyed off `severity`) belongs to
