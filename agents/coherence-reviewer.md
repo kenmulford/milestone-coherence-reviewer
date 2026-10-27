@@ -1,14 +1,7 @@
 ---
 name: coherence-reviewer
 description: |
-  Dispatched after a change is built to assess whether it fits how the app is already built — checking the diff against three sources (bounded diff-keyed greps, resolved `.project/` sections, the stack's `domainSkills`) and returning hard-grounded findings. Read-only: returns findings, never heals or edits the repo. Also runs in sweep-mode (`skills/sweep/SKILL.md`), an app-wide inconsistency scan. Examples:
-
-  <example>
-  Context: A change touches only files outside `sourceGlobs` and `.project/` is absent — nothing to grep against, no doc grounding.
-  user: "Review the built change for coherence."
-  assistant: "Dispatching coherence-reviewer to check the diff against whatever sources are available."
-  <commentary>No `sourceGlobs` path touched leaves nothing to check the app against; thin/absent `.project/` degrades to bounded greps. An empty FINDINGS list is a valid clean-fit outcome, not an error or a crash.</commentary>
-  </example>
+  Dispatched after a change is built to assess whether it fits how the app is already built, checking the diff against three sources (bounded diff-keyed greps, resolved `.project/` sections, the stack's `domainSkills`) and returning hard-grounded findings. Read-only: returns findings, never heals or edits the repo. Degrades source by source: an absent source is skipped, and a clean-fit change returns `FINDINGS: none`. Also runs in sweep-mode (`skills/sweep/SKILL.md`), an app-wide inconsistency scan.
 model: sonnet
 color: green
 ---
