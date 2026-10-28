@@ -231,14 +231,23 @@ cmd_keys() {
 locate_driver_script() {
   local leaf="$1" cand plugins_root
 
-  # (1) Co-installed sibling via CLAUDE_PLUGIN_ROOT. That var is THIS plugin's
-  #     own versioned install dir: <plugins>/cache/<marketplace>/<plugin>/<ver>.
-  #     Two dirname's strip <plugin>/<ver>, leaving the marketplace dir under
-  #     which the driver is a sibling: <marketplace>/milestone-driver/<ver>/...
+  # (1) Co-installed sibling of THIS plugin's own versioned install dir:
+  #     <plugins>/cache/<marketplace>/<plugin>/<ver> (Claude Code and Codex share
+  #     this depth). The dir is CLAUDE_PLUGIN_ROOT when set, else this script's
+  #     parent dir, used only inside a cache layout (its parent is named
+  #     milestone-coherence-reviewer), never from a dev checkout: neither runtime
+  #     exports CLAUDE_PLUGIN_ROOT to model-run shell commands. Two dirname's
+  #     strip <plugin>/<ver>, leaving the marketplace dir under which the driver
+  #     is a sibling: <marketplace>/milestone-driver/<ver>/...
   #     (NO extra "*/" level — that never matched the real cache layout; finding
   #     2). Pick the highest SemVer dir with sort -V.
-  if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-    local market_dir; market_dir="$(dirname "$(dirname "$CLAUDE_PLUGIN_ROOT")")"
+  local self_root="${CLAUDE_PLUGIN_ROOT:-}"
+  if [ -z "$self_root" ]; then
+    self_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)"
+    [ "$(basename "$(dirname "$self_root")")" = "milestone-coherence-reviewer" ] || self_root=""
+  fi
+  if [ -n "$self_root" ]; then
+    local market_dir; market_dir="$(dirname "$(dirname "$self_root")")"
     cand="$(ls -d "$market_dir"/milestone-driver/*/scripts/"$leaf" 2>/dev/null | sort -V | tail -1)"
     [ -n "$cand" ] && [ -f "$cand" ] && { printf '%s' "$cand"; return 0; }
   fi
