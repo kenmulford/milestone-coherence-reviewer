@@ -61,7 +61,7 @@ l.131). The order is fixed and mirrors the feeder and `milestone-driver`'s own
 1. `<REPO_ROOT>/.milestone-config/driver.json` — used if present.
 2. `<REPO_ROOT>/milestone-driver.json` (the legacy root location) — fallback.
 
-> Note: `.milestone-config/feeder.json` is the **feeder's** config. It is **not**
+> Note: `.milestone-config/feeder.json` is the feeder's config. It is **not**
 > a source of these shared keys.
 
 The keys read are exactly these five (`BRIEF.md` l.90):
@@ -79,7 +79,7 @@ never fabricates a default.
 
 ## How `.project/` sections are read
 
-Coherence does **not** re-read whole docs and does **not** re-implement a
+Coherence does not re-read whole docs and does not re-implement a
 Markdown parser. It locates the **installed milestone-driver's** `read-doc-section`
 primitive and calls it once per section. That primitive prints only the one
 section you asked for (the matched heading down to the next heading of the same or
@@ -146,7 +146,7 @@ ladder**, same order, same clean degradation, described under
 work. That primitive ships in milestone-driver **v1.19.0** and later; an older
 driver simply doesn't have it, which the ladder reports as not found.
 
-**`cite` is a pass-through.** Unlike `keys` and `docs`, it emits **no** record
+**`cite` is a pass-through.** Unlike `keys` and `docs`, it emits no record
 stream and **no** `SUMMARY` line: the primitive's stdout, its stderr, and its exit
 code are relayed **unchanged** — nothing reformatted, nothing filtered, nothing
 re-interpreted. What the caller reads is the primitive's own answer.
@@ -171,7 +171,7 @@ anchor and the file named on stderr, and a non-zero exit.
 | Code | Meaning |
 | --- | --- |
 | `0` | at least one match — the anchor resolved |
-| `1` | the anchor wasn't found, **or** the file is missing/unreadable, **or** the `resolve-citation` primitive couldn't be located |
+| `1` | the anchor wasn't found, or the file is missing/unreadable, or the `resolve-citation` primitive couldn't be located |
 | `2` | bad usage — not exactly two arguments, or an empty anchor (an empty string matches every line, so it's a usage error rather than a whole-file answer) |
 
 `0`–`2` are the primitive's own codes, relayed. The **unlocatable-primitive** case
@@ -190,10 +190,10 @@ verbatim and emits no records — see
 
 | Record | Meaning |
 | --- | --- |
-| `KEY <name> <value>` | one resolved shared-key value. An **array** key emits one `KEY` record per element, so arrays and scalars parse the same way. Each value is **exactly one record**, even when the underlying JSON value spans multiple lines or contains a TAB (see "Record-value encoding" below). |
+| `KEY <name> <value>` | one resolved shared-key value. An array key emits one `KEY` record per element, so arrays and scalars parse the same way. Each value is **exactly one record**, even when the underlying JSON value spans multiple lines or contains a TAB (see "Record-value encoding" below). |
 | `SKIP key <name> <reason>` | a shared key that wasn't in the (valid) profile. |
 | `SKIP section <doc>#<anchor> <reason>` | a section that was absent/unreadable, a lone-`[TBD]` placeholder, or empty. |
-| `SECTION-BEGIN <doc> <anchor>` … body … `SECTION-END <doc> <anchor>` | a resolved doc section and its **verbatim** content — every line between the markers round-trips exactly as the driver primitive returned it, **including blank lines inside the body and any trailing blank lines** (see "Section-body trailing blank lines" below). |
+| `SECTION-BEGIN <doc> <anchor>` … body … `SECTION-END <doc> <anchor>` | a resolved doc section and its verbatim content — every line between the markers round-trips exactly as the driver primitive returned it, **including blank lines inside the body and any trailing blank lines** (see "Section-body trailing blank lines" below). |
 | `SIGNAL no-config` | neither profile file exists — the caller should fall back to bounded repo greps. |
 | `SIGNAL no-doc-grounding` | no docs root, no driver primitive, or nothing resolved — fall back to bounded greps and (per `BRIEF.md` l.96 / D17) nudge toward `milestone-bootstrapper`. |
 | `ERROR malformed-config <file> <detail>` | a profile that exists but is invalid JSON. Surfaced (also to stderr), never silently skipped, never replaced with made-up values. |

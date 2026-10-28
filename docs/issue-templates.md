@@ -1,7 +1,7 @@
 # Issue templates — shaping the spin-out body to the consumer repo's convention
 
 [Heal routing](heal-routing.md) decides **where** each fix lands. This doc is the
-piece next to it: for the routes that open **a new issue**, it decides **what
+piece next to it: for the routes that open a new issue, it decides **what
 that issue's body looks like** — so a spun-out finding reads like every other
 issue in the consumer's backlog instead of like a third structure a triager has
 to learn.
@@ -16,9 +16,9 @@ with [heal-routing](heal-routing.md) (the route table) and [recall](recall.md)
 (the read-back contract). Design record:
 [`docs/superpowers/specs/2026-07-20-template-shaped-spin-out-design.md`](superpowers/specs/2026-07-20-template-shaped-spin-out-design.md).
 
-> Scope note. This is the **`review` path only** — `skills/sweep/SKILL.md` is
-> unchanged. This doc shapes the **body**; it never touches *where* the issue
-> attaches (heal-routing's
+> Scope note. This is the **`review` path only** — `skills/sweep/SKILL.md`
+> spin-outs do not use these templates. This doc shapes the **body**; it
+> never touches *where* the issue attaches (heal-routing's
 > [reconciliation](heal-routing.md#milestone-attachment-reconciliation-not-a-hard-coded-assumption)),
 > and it is **never a gate** — no template condition can stop an issue from
 > being created.
@@ -41,8 +41,8 @@ the `.project/` sections (`BRIEF.md` §"Analyze once, then distribute" l.33-40).
 
 | Rung | Condition | Result |
 | --- | --- | --- |
-| 1 | `agentIssueTemplate` is set in `.milestone-config/driver.json` **and** the named file is readable | use that template — **Mode A** |
-| 2 | exactly one file in `.github/ISSUE_TEMPLATE/` | use it — **Mode A** if it is a suite-authored stock file, **Mode B** if it is consumer-owned, **Mode C** if it is `.md` |
+| 1 | `agentIssueTemplate` is set in `.milestone-config/driver.json` **and** the named file is readable | use that template — Mode A |
+| 2 | exactly one file in `.github/ISSUE_TEMPLATE/` | use it — Mode A if it is a suite-authored stock file, Mode B if it is consumer-owned, Mode C if it is `.md` |
 | 3 | zero templates, **or** two-plus with no `agentIssueTemplate` key | the built-in shape |
 | 4 | — | absence **never** blocks issue creation |
 
@@ -70,7 +70,7 @@ field's meaning.
 | Mode | Reached via | Shape | Emission |
 | --- | --- | --- | --- |
 | **A** | rung 1, or rung 2 on a suite-authored stock `.yml` | known | translate every non-`markdown` field to `## <label>`, in `body:` order |
-| **B** | rung 2 on a consumer-owned `.yml` | unknown | the **first** `textarea`'s `attributes.label` becomes one `## <label>`; the whole built-in body goes under it; every other field is omitted |
+| **B** | rung 2 on a consumer-owned `.yml` | unknown | the first `textarea`'s `attributes.label` becomes one `## <label>`; the whole built-in body goes under it; every other field is omitted |
 | **C** | rung 2 on a `.md` template | n/a | use the `.md` body as the skeleton directly |
 
 ### Mode A — stock or keyed (shape known)
@@ -223,7 +223,7 @@ skip; coherence heals, it never gates*).
 | two or more templates and no `agentIssueTemplate` key | built-in shape |
 | a Mode B template with **zero** `textarea` fields | built-in shape |
 | a Mode A **optional** field that cannot be filled | that section omitted |
-| a Mode A **required** field that cannot be filled | the truthful constant for Non-goals; **any other** such field → built-in shape for that finding |
+| a Mode A **required** field that cannot be filled | the truthful constant for Non-goals; any other such field → built-in shape for that finding |
 
 A "noted" row is surfaced the same way every other best-effort step in the run is
 — skipped-and-noted in the write-up, never raised (`docs/write-up.md`
@@ -231,8 +231,8 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
 
 ## Out of scope
 
-- **The write-up format**, its four landing places, and the per-finding tightness
-  rule (`docs/write-up.md`) — unchanged.
+- **The write-up contract**, its four landing places, and the per-finding tightness
+  rule (`docs/write-up.md`) — stay in that doc.
 - **The drop-if-ungroundable inversion** (`agents/coherence-reviewer.md` §"The hard-grounding rule (load-bearing — enforced at emit time)") —
   deliberate, stays.
 - **The `chore/propose-*` conventions-PR lane** (`skills/review/SKILL.md` §"Step 3") —
@@ -241,7 +241,7 @@ A "noted" row is surfaced the same way every other best-effort step in the run i
 - **Heal routing itself** — which finding takes which route, and whether the new
   issue attaches to a milestone or the backlog, stay in
   [heal-routing.md](heal-routing.md).
-- **Sweep-mode spin-outs** — `skills/sweep/SKILL.md` is unchanged.
+- **Sweep-mode spin-outs** (`skills/sweep/SKILL.md`) do not use these templates.
 - **Enforcement.** Issue *forms* are browser-UI only; `gh issue create` with a
   body bypasses them entirely
   ([cli/cli#5865](https://github.com/cli/cli/issues/5865)). This is structure the
