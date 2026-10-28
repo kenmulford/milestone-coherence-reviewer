@@ -7,24 +7,24 @@ one-click way to redo it differently if you disagree* (`BRIEF.md`
 §"Communication is the actual product" l.63-74; §"Recorded decisions" l.115).
 
 This doc is the **write-up contract** — the shape of that note, where it lands,
-and how it degrades. It is implemented by the standalone `review` skill (#7) and
-rendered from the [review engine](../agents/coherence-reviewer.md)'s (#3)
+and how it degrades. It is implemented by the standalone `review` skill and
+rendered from the [review engine](../agents/coherence-reviewer.md)'s
 `FINDINGS` **and** `PROPOSALS` blocks, distributed through the
-[analyze-once](analyze-once.md) (#4) slices. The write-up **renders** from that
+[analyze-once](analyze-once.md) slices. The write-up **renders** from that
 single consolidated analysis — it never re-greps the repo, re-reads a doc, or
 re-derives a finding or a proposal (`BRIEF.md` l.35-40, l.114).
 
 > Scope note. This doc **specifies** the write-up and its mirrors. It does not
-> itself run `gh` or post comments — the `review` skill (#7) enacts the issue and
+> itself run `gh` or post comments — the `review` skill enacts the issue and
 > PR mirrors via `gh ... comment`; this layer ships only the
 > [memory-mirror helper](#the-memory-mirror-detect-or-fallback) the skill calls.
 
 ## What the write-up renders from (no re-derivation)
 
-The write-up is built **entirely** from the engine's `FINDINGS` **and**
+The write-up is built **entirely** from the engine's `FINDINGS` and
 `PROPOSALS` blocks, handed across as the analyze-once analysis, refined by the
 Step 2.5 verify pass (`docs/analyze-once.md` §"Verify grounding, drop what
-fails"; issue #38) before either block reaches the renderer. Every per-finding
+fails") before either block reaches the renderer. Every per-finding
 and per-proposal **content** field it shows — the fields in the table below —
 is a field one of those blocks already carries; the renderer transforms, it
 does not discover. Two elements describing the reviewed change are **not**
@@ -74,11 +74,11 @@ section renders **only** from that block's fields (plus the live PR link the
 orchestrator opened for that proposal — a real artifact, not a fabricated
 claim), and `PROPOSALS: none` renders **nothing** — never a false proposal.
 
-For a **sweep** run the write-up also renders the **swept scope** — read from the
+For a sweep run the write-up also renders the **swept scope** — read from the
 two sweep-valued top-level header fields (`REVIEWED: sweep:broad | sweep:<pattern>`
 and/or `SOURCES.app-grep: swept-broad | swept-pattern:<pattern>`,
 `agents/coherence-reviewer.md` §"Sweep-mode") — surfaced as **"scanned: broad"**
-or **"scanned: pattern `<pattern>`"**. This is a **parallel case**, not a change
+or **"scanned: pattern `<pattern>`"**. This is a parallel case, not a change
 to the per-change render path: a per-change run carries the per-change
 `REVIEWED` / `SOURCES.app-grep` values and renders no scanned-scope line. These
 are engine fields, so the "renders only from engine fields" contract still holds —
@@ -112,7 +112,7 @@ So each rendered item carries, in order:
 ### The `gh issue create` redo one-liner
 
 Reuse the suite's established issue-create primitive — the same one the feeder
-uses to write issues (convention: `milestone-feeder/skills/create/SKILL.md:182`,
+uses to write issues (convention: `milestone-feeder/docs/create-deploy-sequence.md` §"c. Create each surviving issue; build the slug→`#n` map",
 `gh issue create --title … --body …`). Render it copy-paste-ready and scoped to
 the specific change it would redo:
 
@@ -132,7 +132,7 @@ review. Quote the title and body so the line pastes and runs as-is.
 ## Proposed convention — rendered from the `PROPOSALS` block
 
 Where the per-finding items above render the drift (`FINDINGS`), the write-up
-**also** renders a **Proposed convention** section — one item per entry in the
+also renders a **Proposed convention** section — one item per entry in the
 engine's `PROPOSALS` block (`agents/coherence-reviewer.md` §"Convention
 proposals"). It reports the rule the orchestrator opened as a config-only PR for
 the human to accept (merge) or reject (close). A proposal is **not** a drift fix
@@ -144,7 +144,7 @@ Per proposal, in order:
    stable citation anchor).
 2. **The rule** — the one-line `rule` that becomes the `>` blockquote.
 3. **The exemplar** — the `exemplar` `path:line` the entry cites.
-4. **The diverging sites** — shown **only when `disagree: yes`**: the `diverging`
+4. **The diverging sites** — shown only when `disagree: yes`: the `diverging`
    `file:line` list (the sites differing from the recommended winner, surfaced,
    not auto-changed). Omitted entirely when `disagree: no`.
 5. **The config-PR link** — a link to the config-only PR the orchestrator opened
@@ -168,7 +168,7 @@ dropped for lack of grounding never appears here.
 
 Where the sections above render **from** the engine's blocks, this one renders
 from the orchestrator's own **Step 2.5 verify pass** (`docs/analyze-once.md`
-§"Verify grounding, drop what fails"; issue #38) — the mechanical check, run in
+§"Verify grounding, drop what fails") — the mechanical check, run in
 both `skills/review/SKILL.md` and `skills/sweep/SKILL.md` immediately after
 their engine dispatch, that drops any finding whose `grounding` fails both the
 cache-only tier-1 check and the one bounded tier-2 live re-check.
@@ -199,7 +199,7 @@ The same write-up content lands in four places, but they are **not** equal
 
 | Place | Tier | How it's written |
 | --- | --- | --- |
-| **Inline summary** | **PRIMARY** — the un-buried headline a human reads | returned inline by the `review` skill; always produced |
+| **Inline summary** | PRIMARY — the un-buried headline a human reads | returned inline by the `review` skill; always produced |
 | Memory | supplemental — audit trail | the [memory-mirror helper](#the-memory-mirror-detect-or-fallback) |
 | The relevant issue comment | supplemental — audit trail | `gh issue comment <n> --body "<write-up>"` |
 | The related PR comment | supplemental — audit trail | `gh pr comment <pr> --body "<write-up>"` |
@@ -215,16 +215,16 @@ The same write-up content lands in four places, but they are **not** equal
 The hierarchy is an invariant: the inline summary is always rendered as the
 primary copy, and the three mirrors are always rendered as supplemental copies of
 *that same content* — never the other way round. (Convention for the comment
-write surface: `milestone-driver/skills/triage/SKILL.md:292`
-`gh issue comment <n> --body "…"`; `milestone-driver/skills/solve-issue/SKILL.md:234`
+write surface: `milestone-driver/skills/triage/SKILL.md` §"Step 6 - Comment on each affected issue and recommend its park label"
+`gh issue comment <n> --body "…"`; `milestone-driver/skills/solve-issue/permission-preflight.md` §"Tool surface and response"
 `gh pr comment <pr>`.)
 
 ## The empty / clean-fit state — never silence
 
 A change that fits with **zero findings** (`FINDINGS: none`) still produces a
 write-up. It reports the positive outcome explicitly — e.g. **"Fits cleanly —
-nothing changed"** — and is never silence or an empty output (`BRIEF.md` l.23,
-l.141 "what fits, what doesn't").
+nothing changed"** — and is never silence or an empty output (`BRIEF.md` §"What it is",
+§"Definition of done" "what fits, what doesn't").
 
 - The headline is produced exactly as in the finding case: the inline summary is
   primary, the three mirrors are supplemental copies of the clean-fit note.
@@ -232,13 +232,13 @@ l.141 "what fits, what doesn't").
   redo. The clean-fit write-up states what was checked (read from the `SOURCES`
   lines: which of app-grep / project-docs / domain-skills were available) so the
   reader can tell a genuine clean fit from a thin-grounding run.
-- For a **sweep** run the clean-fit headline additionally states **what was
+- For a sweep run the clean-fit headline additionally states **what was
   scanned** — the swept scope, "scanned: broad" or "scanned: pattern
   `<pattern>`", read from the sweep-valued `REVIEWED` / `SOURCES.app-grep` header
   fields (`agents/coherence-reviewer.md` §"Sweep-mode"). This is the render
   contract the sweep's empty-state reuses to surface "what was scanned"
   (`skills/sweep/SKILL.md` §"Empty state") — a parallel case; the per-change
-  clean-fit headline is unchanged.
+  clean-fit headline carries no scanned line.
 - Absence of findings is an **explicit statement**, never an absent output. The
   reviewer reports both halves — what fits and what doesn't.
 
@@ -249,8 +249,8 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 
 - Concise and flat — no wall-of-text, no preamble, no congratulatory notes. It
   follows the suite's terse output norm (convention:
-  `milestone-driver/docs/architecture.md:174-176` concise/tabular output;
-  `milestone-feeder/agents/issue-author.md:113-115` "Terse, evidence-grounded,
+  `milestone-driver/docs/architecture.md` §"Output style" concise/tabular output;
+  `milestone-feeder/docs/style-contracts.md` §"Communication style" "Terse, evidence-grounded,
   flat").
 - One short item per finding — what / why / citation / one-liner — not an essay
   per finding. **Over-explaining defeats the tool** and is rejected.
@@ -264,9 +264,8 @@ is held **tight** (`BRIEF.md` l.74, l.129-130):
 
 A supplemental mirror whose target is unavailable is **skipped, noted, and never
 allowed to suppress the primary inline summary** (`BRIEF.md` l.89, l.96; the
-suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md:103`,
-`milestone-feeder/skills/plan/SKILL.md:166` "Degrade gracefully: a missing … is
-not an error").
+suite's absent-means-skip convention — `milestone-driver/docs/profile-schema.md` §"Keys" (the `Absent →` rows),
+`milestone-feeder/skills/plan/SKILL.md` §"Step 0: Read config + project docs (best-effort), once-per-run outer boundary").
 
 | Unavailable target | Behavior |
 | --- | --- |
@@ -284,8 +283,8 @@ does not gate).
 
 The memory mirror is **supplemental and best-effort**, written by the helper this
 layer ships — `scripts/memory-mirror.{sh,ps1}`. Its target is resolved by the
-**detect-or-fallback** design (RESOLVED, user decision 2026-06-23; issue #5
-Design):
+**detect-or-fallback** design (RESOLVED, user decision
+2026-06-23):
 
 ### Conservative detection (never guess-and-write)
 
@@ -364,7 +363,7 @@ mirrors accrue quietly as the audit trail.
 
 - The write-up is the **primary deliverable** — not the verdict (`BRIEF.md` l.23,
   l.115).
-- It **renders** from the engine's `FINDINGS` **and** `PROPOSALS` blocks via the
+- It **renders** from the engine's `FINDINGS` and `PROPOSALS` blocks via the
   analyze-once slices — it never re-greps, re-reads a doc, or re-derives a
   finding or a proposal.
 - **Dropped-grounding count**: when the Step 2.5 verify pass's tally

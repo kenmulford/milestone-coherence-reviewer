@@ -79,7 +79,7 @@ run_case() {
 run_case "happy" 0 \
   "OK	agents/coherence-reviewer.md	150/150" \
   "OK	skills/review/SKILL.md	4100/4100" \
-  "OK	skills/sweep/SKILL.md	4200/4200" \
+  "OK	skills/sweep/SKILL.md	3900/3900" \
   "SUMMARY	ok=3	failed=0"
 
 run_case "over-description" 1 \
@@ -89,7 +89,7 @@ run_case "over-skill" 1 \
   "FAIL	skills/review/SKILL.md	4101/4100"
 
 run_case "missing-file" 1 \
-  "FAIL	skills/sweep/SKILL.md	MISSING/4200"
+  "FAIL	skills/sweep/SKILL.md	MISSING/3900"
 
 run_case "malformed" 1 \
   "FAIL	agents/coherence-reviewer.md	NODESC/150"
