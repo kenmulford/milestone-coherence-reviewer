@@ -34,7 +34,7 @@ across `scripts/resolve-config.{sh,ps1}` and the suite's mirror row):
 
 | Step | How |
 |---|---|
-| invoke | `scripts/memory-mirror.<sh\|ps1> --recall --repo-root <REPO_ROOT> -- <the diff's touched paths>` — the touched paths from `git diff <integrationBranch>...<head> --name-only` |
+| invoke | `"${CLAUDE_PLUGIN_ROOT}/scripts/memory-mirror.<sh\|ps1>" --recall --repo-root <REPO_ROOT> -- <the diff's touched paths>` — the touched paths from `git diff <integrationBranch>...<head> --name-only` |
 | parse once | read recall's documented TAB record stream a single time: `ENTRY-BEGIN<TAB>slug<TAB>ts`, `MATCH<TAB>path<TAB>line`, the verbatim entry-body lines, `ENTRY-END<TAB>slug<TAB>ts`, the `NONE<TAB>…` sentinel, and `SUMMARY<TAB>entries=<N><TAB>matches=<M>` **last**. Read `entries=<N>` from SUMMARY. Nothing re-reads recall after this point (the analyze-once invariant) |
 | hand off | for each matched entry, wrap its verbatim body lines as a `SECTION-BEGIN … SECTION-END`-style payload — the same verbatim-payload shape the resolved `.project/` sections use (`skills/review/SKILL.md` Step 1 item 2) — as the engine's fifth advisory context part. **Never** hand the engine the raw TAB stream |
 | empty state | `entries=0`, or the `NONE` sentinel, with exit 0 → the recall part is empty/absent; the engine analyzes from scratch (Step 4 renders the "no related prior write-ups found" note). A store that is **absent / empty / unreadable is this exit-0 empty-state — not a failure** (`scripts/memory-mirror.sh (An absent, empty, or unreadable store is EXPECTED, not exceptional)`; the `.ps1` twin) |
