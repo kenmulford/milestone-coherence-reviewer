@@ -163,15 +163,24 @@ function Select-HighestVersionPath {
 # (.project/library-manifest.md#Avoid / banned), and it is what makes "the SAME
 # ladder" literal rather than a claim. Mirrors locate_driver_script() in the .sh.
 function Locate-DriverScript([string]$Leaf) {
-  # (1) Co-installed sibling via CLAUDE_PLUGIN_ROOT. That var is THIS plugin's own
-  #     versioned install dir: <plugins>/cache/<marketplace>/<plugin>/<ver>. Two
-  #     Split-Parents strip <plugin>/<ver>, leaving the marketplace dir under which
-  #     the driver is a sibling: <marketplace>/milestone-driver/<ver>/scripts/...
+  # (1) Co-installed sibling of THIS plugin's own versioned install dir:
+  #     <plugins>/cache/<marketplace>/<plugin>/<ver> (Claude Code and Codex share
+  #     this depth). The dir is CLAUDE_PLUGIN_ROOT when set, else this script's
+  #     parent dir, used only inside a cache layout (its parent is named
+  #     milestone-coherence-reviewer), never from a dev checkout: neither runtime
+  #     exports CLAUDE_PLUGIN_ROOT to model-run shell commands. Two Split-Parents
+  #     strip <plugin>/<ver>, leaving the marketplace dir under which the driver
+  #     is a sibling: <marketplace>/milestone-driver/<ver>/scripts/...
   #     Glob that exact shape (no broad -Recurse, which could match an unrelated
   #     path containing 'milestone-driver'; finding 2) and pick the highest SemVer
   #     (finding 5).
-  if (-not [string]::IsNullOrEmpty($env:CLAUDE_PLUGIN_ROOT)) {
-    $marketDir = Split-Path -Parent (Split-Path -Parent $env:CLAUDE_PLUGIN_ROOT)
+  $selfRoot = $env:CLAUDE_PLUGIN_ROOT
+  if ([string]::IsNullOrEmpty($selfRoot)) {
+    $selfRoot = Split-Path -Parent $PSScriptRoot
+    if ((Split-Path -Leaf (Split-Path -Parent $selfRoot)) -ne 'milestone-coherence-reviewer') { $selfRoot = '' }
+  }
+  if (-not [string]::IsNullOrEmpty($selfRoot)) {
+    $marketDir = Split-Path -Parent (Split-Path -Parent $selfRoot)
     $siblingGlob = Join-Path $marketDir 'milestone-driver'
     if (Test-Path -LiteralPath $siblingGlob -PathType Container) {
       $cands = @(Get-ChildItem -Path (Join-Path $siblingGlob "*/scripts/$Leaf") -File -ErrorAction SilentlyContinue)

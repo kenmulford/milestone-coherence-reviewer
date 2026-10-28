@@ -1,0 +1,11 @@
+{
+  "name": "demo-plugin",
+  "description": "Demo description.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Demo",
+    "shortDescription": "Demo.",
+    "developerName": "Ken Mulford",
+    "category": "Productivity"
+  }
+}

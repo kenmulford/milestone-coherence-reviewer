@@ -54,6 +54,16 @@ To scan the whole app for standing inconsistency — not just one change — run
 /milestone-coherence-reviewer:sweep [pattern]
 ```
 
+## Codex
+
+```
+codex plugin marketplace add kenmulford/milestone-suite
+```
+
+Install `milestone-coherence-reviewer` from `/plugins`, then invoke `$milestone-coherence-reviewer:review <branch-or-PR>` or `$milestone-coherence-reviewer:sweep [pattern]`. This plugin ships no hooks, so `/hooks` has nothing to trust.
+
+**Cross-plugin contract.** `milestone-driver` dispatches the engine as `milestone-coherence-reviewer:coherence-reviewer`. On Codex it resolves that name to `~/.codex/plugins/cache/<marketplace>/milestone-coherence-reviewer/<version>/agents/coherence-reviewer.md`. Keep the file at `agents/coherence-reviewer.md` and its frontmatter `name: coherence-reviewer`.
+
 ## Requires
 
 `superpowers` (from `claude-plugins-official`) — the milestone-suite's shared prerequisite. It is not installed automatically, so add it yourself; the `milestone-driver` and `milestone-feeder` tools that drive and feed this reviewer need it to run the suite.

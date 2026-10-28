@@ -3,6 +3,8 @@ name: review
 description: This skill should be used when the user invokes "/milestone-coherence-reviewer:review <branch-or-PR>", or asks to "review this change for coherence", "check whether this branch fits the app", or "coherence-review this PR". Reviews one built change for fit with how the rest of the app is already built — resolves the shared config + project docs, runs the read-only review engine through the analyze-once orchestration, writes a legible inline write-up (mirrored to memory + the issue/PR), and routes fixes by drift size (trivial → a small-issue note, small/medium → current-milestone issues, large → a brief to milestone-feeder). Read-only on the merge: it heals via follow-ups and never blocks, gates, or touches the merge or the protected branch. Authors no application code and opens no application-code PRs; it may open a config-only PR for a proposed `.project/conventions.md` entry, targeting `integrationBranch` (never the protected branch), human-gated.
 ---
 
+If `${CLAUDE_PLUGIN_ROOT}` appears unexpanded, it is the parent of the `skills/` directory that holds this file. On Codex, read `${CLAUDE_PLUGIN_ROOT}/skills/runtime-codex.md` first.
+
 # review — the standalone coherence reviewer
 
 Review one built change — a branch or a PR — for whether it **fits how the app is already built**: existing helpers and patterns, your conventions, the stack's idioms. Resolve the shared config + `.project/` docs once (the resolution layer, `scripts/resolve-config.{sh,ps1}`), gather the review context once and dispatch the read-only review engine through the analyze-once orchestration, render the legible write-up inline and to its mirrors, then route each fix by drift size (heal routing, `docs/heal-routing.md`). This is the standalone v1 entry — it works with no `milestone-driver` changes.
@@ -49,12 +51,12 @@ Then **STOP**. This is the only condition under which the run produces no write-
 
 ### Step 1 — Resolve config + project docs (degrade cleanly)
 
-Resolve the suite's shared mechanics and the cited `.project/` sections by **driving the resolution layer** (`scripts/resolve-config.{sh,ps1}`) — do not re-implement it, and do not read whole docs (`docs/resolution.md`; `BRIEF.md` l.89-90). Pick the host the same way the rest of the suite does: pwsh on Windows, bash elsewhere (the host selection mirrored across `scripts/resolve-config.{sh,ps1}` and the suite's `ci-preflight-steps.{sh,ps1}`).
+Resolve the suite's shared mechanics and the cited `.project/` sections by **driving the resolution layer** (`scripts/resolve-config.{sh,ps1}`) — do not re-implement it, and do not read whole docs (`docs/resolution.md`; `BRIEF.md` l.89-90). Pick the host as the rest of the suite does: pwsh on Windows, bash elsewhere.
 
 1. **Resolve the shared keys** (the driver.json → root `milestone-driver.json` fallback is *inside* the resolution layer — you do not re-implement it):
 
    ```
-   scripts/resolve-config.<sh|ps1> keys <REPO_ROOT>
+   "${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.<sh|ps1>" keys <REPO_ROOT>
    ```
 
    Parse the TAB-separated record stream once and cache it (resolve-once — `docs/resolution.md` §"Resolve-once contract"). Reverse the `KEY`-value encoding in the documented order — `\t`→TAB, then `\n`→newline, then `\\`→`\` (`docs/resolution.md` §"Record-value encoding"). You consume these keys: `sourceGlobs` (the only paths the engine greps for app grounding), `uiSurfaceGlobs`, `integrationBranch` (the diff base), `nonNegotiables`, and **`domainSkills`** (the stack's best-practice sources). A key absent from a present config arrives as `SKIP key …` — it is skipped, never invented.
@@ -62,7 +64,7 @@ Resolve the suite's shared mechanics and the cited `.project/` sections by **dri
 2. **Resolve the cited `.project/` sections.** From the change under review (its issue/PR body and the surfaces it touches), collect the cited `.project/<doc>#<section>` anchors, then resolve them in one call (everything after `--` is a `<doc>#<heading>` spec; `<heading>` is the heading text without leading `#`s):
 
    ```
-   scripts/resolve-config.<sh|ps1> docs <REPO_ROOT> -- conventions.md#"Service layer" design-system.md#Buttons …
+   "${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.<sh|ps1>" docs <REPO_ROOT> -- conventions.md#"Service layer" design-system.md#Buttons …
    ```
 
    Each resolved section arrives as a verbatim `SECTION-BEGIN … SECTION-END` payload; cache them as the engine's project-docs slices. Absent / `[TBD]` / empty sections arrive as `SKIP section …` and are simply omitted.
@@ -93,7 +95,7 @@ Build the review context a **single time** per review call, then dispatch the en
    | the bounded, diff-keyed grep results | greps within `sourceGlobs` for the specific symbols the diff introduces — **never** a whole-repo scan (`BRIEF.md` l.27, l.112) |
    | the recalled prior write-ups (advisory) | prior write-ups matched to the diff's touched paths, handed to the engine as advisory context — mechanics in **`docs/recall.md`** (item 2 below); source = the orchestrator |
 
-2. **Read recall once (advisory) — the fifth context part.** After item 1's diff makes the touched paths known and before the engine dispatch, read back prior write-ups once, orchestrator-side, via `scripts/memory-mirror.<sh|ps1> --recall` (host as Step 1). The engine runs no recall itself (`agents/coherence-reviewer.md` §"Recalled prior write-ups (advisory only)"). All gather mechanics — the invocation form, the parse-once of the TAB record stream, the verbatim `SECTION-BEGIN … SECTION-END` hand-off, and the exit-0 empty-state vs. nonzero-exit failure split — live in `docs/recall.md` §"Step 2 — gather the recall read-back (once)", the single source.
+2. **Read recall once (advisory) — the fifth context part.** After item 1's diff makes the touched paths known and before the engine dispatch, read back prior write-ups once, orchestrator-side, via `"${CLAUDE_PLUGIN_ROOT}/scripts/memory-mirror.<sh|ps1>" --recall` (host as Step 1). The engine runs no recall itself (`agents/coherence-reviewer.md` §"Recalled prior write-ups (advisory only)"). All gather mechanics — the invocation form, the parse-once of the TAB record stream, the verbatim `SECTION-BEGIN … SECTION-END` hand-off, and the exit-0 empty-state vs. nonzero-exit failure split — live in `docs/recall.md` §"Step 2 — gather the recall read-back (once)", the single source.
 
 3. **Dispatch the read-only engine once** (`agents/coherence-reviewer.md`) against that context — it is the consolidated analysis. Brief it with exactly the five context parts above (its "What you receive") — the recall part is advisory; it returns its structured `FINDINGS` block and a parallel `PROPOSALS` block, and nothing else. Do not make the engine re-read whole docs or re-resolve the shared keys (`docs/analyze-once.md` Step 2; the engine stays read-only and acts on nothing). The engine's `FINDINGS` block carries `REVIEWED`, the three `SOURCES` lines, and per-finding `symbol` / `lens` / `grounding` (exactly one ref) / `severity` (the drift-size hint) / `description`. The parallel `PROPOSALS` block carries, per proposal, `heading` / `rule` / `exemplar` / `sites` / `disagree` / `diverging` (when `disagree: yes`) / `source` / `grounding` — the rule-authoring lane the orchestrator enacts at Step 3. `PROPOSALS: none` means nothing to propose.
 
@@ -145,7 +147,7 @@ Render the write-up **entirely** from the engine's `FINDINGS` and `PROPOSALS` bl
 
    | Mirror | How (pick the host: pwsh on Windows, bash elsewhere) | Skip-and-note when |
    |---|---|---|
-   | **memory** | `scripts/memory-mirror.<sh|ps1> --slug <issue-or-pr-slug> --repo-root <REPO_ROOT> --file <write-up>` (the write-up's detect-or-fallback, `docs/write-up.md`) | the helper prints `MIRROR-FAILED …` / exits nonzero — note the failure, continue |
+   | **memory** | `"${CLAUDE_PLUGIN_ROOT}/scripts/memory-mirror.<sh|ps1>" --slug <issue-or-pr-slug> --repo-root <REPO_ROOT> --file <write-up>` (the write-up's detect-or-fallback, `docs/write-up.md`) | the helper prints `MIRROR-FAILED …` / exits nonzero — note the failure, continue |
    | **the issue comment** | `gh issue comment <n> --body "<write-up>"` | no resolvable issue context — note "issue mirror skipped", continue |
    | **the PR comment** | `gh pr comment <pr> --body "<write-up>"` | no PR exists yet — note "PR mirror skipped — no PR", continue |
 

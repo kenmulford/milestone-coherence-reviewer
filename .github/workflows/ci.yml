@@ -54,3 +54,23 @@ jobs:
         run: ./scripts/check-size-budgets.test.sh
       - name: Check size budgets (agent description + SKILL.md ceilings)
         run: ./scripts/check-size-budgets.sh
+
+  # Guards Codex support: .codex-plugin/plugin.json parses, matches
+  # .claude-plugin/plugin.json's name/version/description, and references only
+  # existing paths; skill/agent/doc text invokes scripts through
+  # ${CLAUDE_PLUGIN_ROOT}, never CWD-relative. Each checker's golden-case tests
+  # run ahead of it, as in size-budgets.
+  codex-support:
+    name: codex-support
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code under review
+        uses: actions/checkout@v7
+      - name: Run the Codex manifest checker's golden-case tests
+        run: ./scripts/check-codex-manifest.test.sh
+      - name: Check the Codex manifest
+        run: ./scripts/check-codex-manifest.sh
+      - name: Run the script-invocation checker's golden-case tests
+        run: ./scripts/check-script-invocations.test.sh
+      - name: Check script invocations are rooted at the plugin root
+        run: ./scripts/check-script-invocations.sh

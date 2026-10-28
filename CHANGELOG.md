@@ -2,6 +2,24 @@
 
 Notable changes to the **milestone-coherence-reviewer** plugin, newest first. (Built on `develop` via the `feeder → driver` dogfood loop.)
 
+## v0.6.0 - Codex support
+
+**Theme:** the plugin installs and runs on Codex. Claude Code behavior is unchanged.
+
+| Change | What |
+|---|---|
+| `.codex-plugin/plugin.json` | Codex manifest; `name`, `version`, `description` match `.claude-plugin/plugin.json`. |
+| `skills/runtime-codex.md` | Codex mapping for the plugin root, `$milestone-coherence-reviewer:review` / `:sweep` invocation, `$ARGUMENTS`, and engine dispatch via `spawn_agent` + `wait_agent` (brief-from-file). Both skills point to it under their frontmatter. |
+| Plugin-root script invocations | Every script invocation in skill, agent, and contract-doc text is `"${CLAUDE_PLUGIN_ROOT}/scripts/<x>"`. The bare `scripts/<x>` form resolved against the consumer repo's CWD on both runtimes. |
+| `scripts/resolve-config.{sh,ps1}` | The co-installed `milestone-driver` lookup falls back to the script's own install dir when `CLAUDE_PLUGIN_ROOT` is unset and the script sits in a `milestone-coherence-reviewer/<version>` cache dir. Neither runtime exports it to model-run shell commands, so `docs` and `cite` previously reached the driver only through `~/.claude/plugins`. |
+| CI `codex-support` job | `scripts/check-codex-manifest.sh` and `scripts/check-script-invocations.sh`, each with golden-case tests. |
+
+### Consumer notes (upgrading from v0.5.1)
+
+- **Cross-plugin contract.** `agents/coherence-reviewer.md` and its `name: coherence-reviewer` are what `milestone-driver` resolves on Codex. Do not rename or move the file.
+- **Review word ceiling.** `skills/review/SKILL.md` is 4095 of 4100 words by local `wc -w`.
+- **No schema changes** to `.milestone-config/driver.json`.
+
 ## v0.5.1 - prompt-audit remediation
 
 **Theme:** the agent, both skills, and the seven contract docs now name components instead of build-issue numbers, state behavior instead of deltas from an earlier version, and carry one bold run per line, so the prompt reads the same to a model that never saw the build history. No behavior changes.
